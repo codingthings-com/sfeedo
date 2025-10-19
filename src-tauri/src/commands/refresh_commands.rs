@@ -65,8 +65,6 @@ pub async fn refresh_feeds(
 #[derive(Debug, Deserialize)]
 pub struct GetArticlesParams {
     pub source_id: Option<String>,
-    pub limit: Option<u32>,
-    pub offset: Option<u32>,
 }
 
 #[derive(Debug, Serialize)]
@@ -98,25 +96,13 @@ pub async fn get_articles(
             
             let total_count = all_articles.len() as u32;
             
-            // Apply pagination
-            let offset = params.offset.unwrap_or(0) as usize;
-            let limit = params.limit.unwrap_or(50) as usize;
-            
-            let articles = if offset < all_articles.len() {
-                let end = std::cmp::min(offset + limit, all_articles.len());
-                all_articles[offset..end].to_vec()
-            } else {
-                Vec::new()
-            };
-            
-            let has_more = (offset + articles.len()) < all_articles.len();
-            
-            log::info!("Returning {} articles out of {} total (has_more: {})", articles.len(), total_count, has_more);
+            // Return all articles - no pagination for desktop app
+            log::info!("Returning all {} articles", total_count);
             
             Ok(ArticlesResponse {
-                articles,
+                articles: all_articles,
                 total_count,
-                has_more,
+                has_more: false, // Always false since we return everything
             })
         }
         Err(e) => {
@@ -236,6 +222,16 @@ pub async fn get_config_info(
         total_feed_sources: sources.len(),
         enabled_feed_sources: enabled_sources,
     })
+}
+
+#[tauri::command]
+pub async fn get_feed_sources(
+    _app_handle: AppHandle,
+) -> Result<Vec<crate::feed_aggregator::NewsSource>, String> {
+    use crate::feed_aggregator::FeedAggregator;
+    
+    let sources = FeedAggregator::get_available_sources();
+    Ok(sources)
 }
 
 /// Information about refresh progress

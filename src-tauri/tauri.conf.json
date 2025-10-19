@@ -11,7 +11,7 @@
   "app": {
     "windows": [
       {
-        "title": "Sfeedo - Desktop Feed Reader",
+        "title": "sfeedo",
         "width": 600,
         "height": 1000,
         "minWidth": 300,

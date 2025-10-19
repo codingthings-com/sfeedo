@@ -6,7 +6,7 @@ class SettingsManager {
     this.config = null;
     this.feedSources = [];
     this.isLoading = false;
-    
+
     this.initializeElements();
     this.setupEventListeners();
     this.loadConfiguration();
@@ -23,7 +23,11 @@ class SettingsManager {
       const settingsNavBtn = document.querySelector('[data-view="settings"]');
       if (settingsNavBtn) {
         settingsNavBtn.addEventListener('click', () => {
-          setTimeout(() => this.renderSettings(), 100);
+          console.log('SettingsManager: Settings nav button clicked');
+          setTimeout(() => {
+            console.log('SettingsManager: Triggering render after nav click');
+            this.renderSettings();
+          }, 100);
         });
       }
     });
@@ -31,36 +35,52 @@ class SettingsManager {
 
   // Load configuration from backend
   async loadConfiguration() {
+    console.log('SettingsManager: Starting loadConfiguration');
     try {
       this.isLoading = true;
-      
+
+      console.log('SettingsManager: Loading config and feed sources...');
       // Load both config and feed sources in parallel
       const [config, feedSources] = await Promise.all([
         TauriAPI.config.getConfig(),
         TauriAPI.feedSources.getFeedSources()
       ]);
-      
+
+      console.log('SettingsManager: Loaded config:', config);
+      console.log('SettingsManager: Loaded feedSources:', feedSources);
+
       this.config = config;
       this.feedSources = feedSources;
-      
-      // Re-render if settings view is currently active
-      if (document.getElementById('settings-view').classList.contains('active')) {
-        this.renderSettings();
-      }
+      this.isLoading = false; // Set loading to false before rendering
+
+      // Always render settings once loaded, regardless of view state
+      console.log('SettingsManager: Rendering settings...');
+      this.renderSettings();
     } catch (error) {
-      console.error('Failed to load configuration:', error);
+      console.error('SettingsManager: Failed to load configuration:', error);
       window.AppNavigation.updateStatus('Failed to load settings');
       this.showError('Failed to load settings. Please try refreshing.');
     } finally {
       this.isLoading = false;
+      console.log('SettingsManager: loadConfiguration finished');
     }
   }
 
   // Render the complete settings interface
   renderSettings() {
-    if (!this.container) return;
+    console.log('SettingsManager: renderSettings called');
+    console.log('SettingsManager: container:', this.container);
+    console.log('SettingsManager: isLoading:', this.isLoading);
+    console.log('SettingsManager: config:', this.config);
+    console.log('SettingsManager: feedSources:', this.feedSources);
 
-    if (this.isLoading || !this.config) {
+    if (!this.container) {
+      console.error('SettingsManager: No container found!');
+      return;
+    }
+
+    if (this.isLoading || !this.config || !this.feedSources) {
+      console.log('SettingsManager: Showing loading state');
       this.container.innerHTML = `
         <div class="settings-loading">
           <div class="spinner"></div>
@@ -70,6 +90,7 @@ class SettingsManager {
       return;
     }
 
+    console.log('SettingsManager: Rendering full settings');
     const settingsHTML = `
       <div class="settings-sections">
         ${this.renderFeedSourcesSection()}
@@ -81,6 +102,7 @@ class SettingsManager {
 
     this.container.innerHTML = settingsHTML;
     this.attachSettingsEventListeners();
+    console.log('SettingsManager: Settings rendered successfully');
   }
 
   // Render feed sources management section
@@ -103,19 +125,8 @@ class SettingsManager {
             <span class="status-indicator ${source.enabled ? 'enabled' : 'disabled'}">
               ${source.enabled ? '✓ Active' : '○ Disabled'}
             </span>
-            ${source.last_fetched ? 
-              `<span class="last-fetched">Last updated: ${new Date(source.last_fetched).toLocaleString()}</span>` :
-              '<span class="last-fetched">Never updated</span>'
-            }
+            <span class="last-fetched">Built-in financial news scraper</span>
           </div>
-        </div>
-        <div class="feed-source-actions">
-          <button class="btn btn-sm btn-outline" data-action="edit-source" data-source-id="${source.id}">
-            Edit
-          </button>
-          <button class="btn btn-sm btn-danger" data-action="remove-source" data-source-id="${source.id}">
-            Remove
-          </button>
         </div>
       </div>
     `).join('');
@@ -171,6 +182,7 @@ class SettingsManager {
             <div class="setting-control">
               <select class="setting-select" data-setting="auto_refresh.interval_minutes" 
                       ${!this.config.auto_refresh.enabled ? 'disabled' : ''}>
+                <option value="2" ${this.config.auto_refresh.interval_minutes === 2 ? 'selected' : ''}>2 minutes</option>
                 <option value="5" ${this.config.auto_refresh.interval_minutes === 5 ? 'selected' : ''}>5 minutes</option>
                 <option value="15" ${this.config.auto_refresh.interval_minutes === 15 ? 'selected' : ''}>15 minutes</option>
                 <option value="30" ${this.config.auto_refresh.interval_minutes === 30 ? 'selected' : ''}>30 minutes</option>
@@ -298,37 +310,37 @@ class SettingsManager {
   async handleSettingChange(settingPath, element) {
     const keys = settingPath.split('.');
     let current = this.config;
-    
+
     // Navigate to the parent object
     for (let i = 0; i < keys.length - 1; i++) {
       current = current[keys[i]];
     }
-    
+
     // Set the value
     const finalKey = keys[keys.length - 1];
     let value = element.value;
-    
+
     // Convert to appropriate type
     if (element.type === 'checkbox') {
       value = element.checked;
     } else if (element.type === 'number' || !isNaN(Number(value))) {
       value = Number(value);
     }
-    
+
     const oldValue = current[finalKey];
     current[finalKey] = value;
-    
+
     try {
       // Handle dependent settings
       if (settingPath === 'auto_refresh.enabled') {
         this.updateAutoRefreshDependents();
       }
-      
+
       // Save configuration to backend
       await this.saveConfiguration();
-      
+
       window.AppNavigation.updateStatus(`Setting updated: ${settingPath}`);
-      
+
       // Dispatch settings change event
       this.dispatchSettingsChangeEvent(settingPath, value, oldValue);
     } catch (error) {
@@ -345,7 +357,7 @@ class SettingsManager {
   updateAutoRefreshDependents() {
     const intervalSelect = this.container.querySelector('[data-setting="auto_refresh.interval_minutes"]');
     const intervalItem = intervalSelect?.closest('.setting-item');
-    
+
     if (intervalSelect && intervalItem) {
       intervalSelect.disabled = !this.config.auto_refresh.enabled;
       intervalItem.classList.toggle('disabled', !this.config.auto_refresh.enabled);
@@ -396,7 +408,7 @@ class SettingsManager {
     const isEdit = !!source;
     const dialog = document.createElement('div');
     dialog.className = 'source-dialog';
-    
+
     dialog.innerHTML = `
       <div class="dialog-overlay">
         <div class="dialog-content">
@@ -437,38 +449,38 @@ class SettingsManager {
     const cancelBtn = dialog.querySelector('.dialog-cancel');
     const saveBtn = dialog.querySelector('.dialog-save');
     const overlay = dialog.querySelector('.dialog-overlay');
-    
+
     const closeDialog = () => {
       document.body.removeChild(dialog);
     };
-    
+
     closeBtn.addEventListener('click', closeDialog);
     cancelBtn.addEventListener('click', closeDialog);
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) closeDialog();
     });
-    
+
     saveBtn.addEventListener('click', async () => {
       const form = dialog.querySelector('.source-form');
       const formData = new FormData(form);
-      
+
       if (form.checkValidity()) {
         const sourceData = {
           name: formData.get('name'),
           url: formData.get('url'),
           enabled: formData.has('enabled')
         };
-        
+
         try {
           saveBtn.disabled = true;
           saveBtn.textContent = 'Saving...';
-          
+
           if (isEdit) {
             await this.updateSource(source.id, sourceData);
           } else {
             await this.addSource(sourceData);
           }
-          
+
           closeDialog();
         } catch (error) {
           // Error is already handled in add/update methods
@@ -479,7 +491,7 @@ class SettingsManager {
         form.reportValidity();
       }
     });
-    
+
     return dialog;
   }
 
@@ -491,7 +503,7 @@ class SettingsManager {
         sourceData.url,
         sourceData.enabled
       );
-      
+
       this.feedSources.push(newSource);
       this.renderSettings();
       window.AppNavigation.updateStatus(`Added feed source: ${sourceData.name}`);
@@ -514,7 +526,7 @@ class SettingsManager {
       };
 
       await TauriAPI.feedSources.updateFeedSource(updatedSource);
-      
+
       this.feedSources[sourceIndex] = updatedSource;
       this.renderSettings();
       window.AppNavigation.updateStatus(`Updated feed source: ${sourceData.name}`);
@@ -536,7 +548,7 @@ class SettingsManager {
 
     try {
       await TauriAPI.feedSources.removeFeedSource(sourceId);
-      
+
       this.feedSources = this.feedSources.filter(s => s.id !== sourceId);
       this.renderSettings();
       window.AppNavigation.updateStatus(`Removed feed source: ${source.name}`);
@@ -553,7 +565,7 @@ class SettingsManager {
 
     try {
       await TauriAPI.feedSources.toggleFeedSource(sourceId, enabled);
-      
+
       source.enabled = enabled;
       this.renderSettings();
       window.AppNavigation.updateStatus(`${enabled ? 'Enabled' : 'Disabled'} feed source: ${source.name}`);
@@ -581,7 +593,7 @@ class SettingsManager {
   // Check for updates
   checkForUpdates() {
     window.AppNavigation.showProgress('Checking for updates...');
-    
+
     setTimeout(() => {
       window.AppNavigation.hideProgress();
       window.AppNavigation.updateStatus('No updates available');
@@ -615,7 +627,7 @@ class SettingsManager {
   // Show error message
   showError(message) {
     if (!this.container) return;
-    
+
     this.container.innerHTML = `
       <div class="error-state">
         <div class="error-icon">⚠️</div>

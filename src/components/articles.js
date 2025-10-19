@@ -5,11 +5,8 @@ class ArticleManager {
     constructor() {
         this.articles = [];
         this.currentSort = 'newest';
-        this.currentPage = 1;
-        this.articlesPerPage = 20;
         this.selectedArticle = null;
         this.totalCount = 0;
-        this.hasMore = false;
         this.isLoading = false;
 
         this.initializeElements();
@@ -30,44 +27,22 @@ class ArticleManager {
     }
 
     // Load articles from Tauri backend
-    async loadArticles(reset = false) {
+    async loadArticles() {
         if (this.isLoading) return;
         
         try {
             this.isLoading = true;
             window.AppNavigation.showProgress('Loading articles...');
 
-            // Reset pagination if requested
-            if (reset) {
-                this.currentPage = 1;
-                this.articles = [];
-            }
-
-            // Calculate offset for pagination
-            const offset = (this.currentPage - 1) * this.articlesPerPage;
-
-            // Prepare parameters for backend call
-            const params = {
-                limit: this.articlesPerPage,
-                offset: offset,
-
-            };
-
-            // Call Tauri backend
-            const response = await TauriAPI.articles.getArticles(params);
+            // Call Tauri backend to get all articles
+            const response = await TauriAPI.articles.getArticles({});
             
-            // Update local state
-            if (reset) {
-                this.articles = response.articles;
-            } else {
-                this.articles = [...this.articles, ...response.articles];
-            }
-            
+            // Update local state with all articles
+            this.articles = response.articles;
             this.totalCount = response.total_count;
-            this.hasMore = response.has_more;
 
             this.renderArticles();
-            window.AppNavigation.updateStatus(`Loaded ${this.articles.length} of ${this.totalCount} articles`);
+            window.AppNavigation.updateStatus(`Loaded ${this.articles.length} articles`);
         } catch (error) {
             console.error('Failed to load articles:', error);
             window.AppNavigation.updateStatus('Failed to load articles');
@@ -86,19 +61,13 @@ class ArticleManager {
         return div.innerHTML;
     }
 
-    // Load more articles (pagination)
-    async loadMoreArticles() {
-        if (this.isLoading || !this.hasMore) return;
-        
-        this.currentPage++;
-        await this.loadArticles(false); // Don't reset, append to existing articles
-    }
+
 
     // Search articles
     async searchArticles(query) {
         if (!query.trim()) {
             // If empty query, reload all articles
-            await this.loadArticles(true);
+            await this.loadArticles();
             return;
         }
 
@@ -109,7 +78,7 @@ class ArticleManager {
             const results = await TauriAPI.articles.searchArticles(query, 100);
             this.articles = results;
             this.totalCount = results.length;
-            this.hasMore = false; // Search results don't support pagination
+
             
             this.renderArticles();
             window.AppNavigation.updateStatus(`Found ${results.length} articles matching "${query}"`);
@@ -152,10 +121,7 @@ class ArticleManager {
         const articlesHTML = sortedArticles.map(article => this.createArticleHTML(article)).join('');
         this.container.innerHTML = articlesHTML;
 
-        // Add load more button if there are more articles
-        if (this.hasMore && !this.isLoading) {
-            this.addLoadMoreButton();
-        }
+
 
         // Add event listeners to article elements
         this.attachArticleEventListeners();
@@ -372,7 +338,7 @@ class ArticleManager {
 
     // Refresh articles
     async refresh() {
-        await this.loadArticles(true); // Reset and reload from beginning
+        await this.loadArticles(); // Reload all articles
     }
 
 
@@ -390,23 +356,7 @@ class ArticleManager {
         }
     }
 
-    // Add load more button
-    addLoadMoreButton() {
-        const loadMoreHTML = `
-            <div class="load-more-container">
-                <button class="btn btn-outline load-more-btn" data-action="load-more">
-                    Load More Articles (${this.articles.length} of ${this.totalCount})
-                </button>
-            </div>
-        `;
-        this.container.insertAdjacentHTML('beforeend', loadMoreHTML);
 
-        // Add event listener
-        const loadMoreBtn = this.container.querySelector('.load-more-btn');
-        loadMoreBtn.addEventListener('click', () => {
-            this.loadMoreArticles();
-        });
-    }
 }
 
 // Initialize article manager when DOM is ready
@@ -417,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load articles initially after a short delay to ensure UI is ready
     setTimeout(() => {
-        articleManager.loadArticles(true);
+        articleManager.loadArticles();
     }, 100);
 
     // Set up global refresh handler

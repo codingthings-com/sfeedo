@@ -28,7 +28,8 @@ pub fn run() {
       update_refresh_config,
       reset_config,
       export_config,
-      get_config_info
+      get_config_info,
+      get_feed_sources
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {

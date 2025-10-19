@@ -1,4 +1,4 @@
-use crate::models::{AppConfig, FeedSource};
+use crate::models::AppConfig;
 use serde_json;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -83,46 +83,7 @@ impl ConfigManager {
         Ok(())
     }
 
-    /// Load feed sources from JSON file
-    pub fn load_feed_sources(&self) -> Result<Vec<FeedSource>, String> {
-        let feed_sources_file = self.config_dir.join("feed_sources.json");
 
-        if !feed_sources_file.exists() {
-            // Return empty list if file doesn't exist
-            return Ok(Vec::new());
-        }
-
-        let content = fs::read_to_string(&feed_sources_file)
-            .map_err(|e| format!("Failed to read feed sources file: {}", e))?;
-
-        let feed_sources: Vec<FeedSource> = serde_json::from_str(&content)
-            .map_err(|e| format!("Failed to parse feed sources JSON: {}", e))?;
-
-        // Validate all feed sources
-        for feed_source in &feed_sources {
-            feed_source.validate()?;
-        }
-
-        Ok(feed_sources)
-    }
-
-    /// Save feed sources to JSON file
-    pub fn save_feed_sources(&self, feed_sources: &[FeedSource]) -> Result<(), String> {
-        // Validate all feed sources before saving
-        for feed_source in feed_sources {
-            feed_source.validate()?;
-        }
-
-        let feed_sources_file = self.config_dir.join("feed_sources.json");
-
-        let json_content = serde_json::to_string_pretty(feed_sources)
-            .map_err(|e| format!("Failed to serialize feed sources to JSON: {}", e))?;
-
-        fs::write(&feed_sources_file, json_content)
-            .map_err(|e| format!("Failed to write feed sources file: {}", e))?;
-
-        Ok(())
-    }
 
     /// Get the configuration directory path
     pub fn get_config_dir(&self) -> &Path {
@@ -144,8 +105,7 @@ impl ConfigManager {
         let default_config = AppConfig::default();
         self.save_config(&default_config)?;
         
-        // Also reset feed sources to empty
-        self.save_feed_sources(&[])?;
+
         
         Ok(())
     }
@@ -240,22 +200,7 @@ mod tests {
         assert!(result.unwrap_err().contains("at least 5 minutes"));
     }
 
-    #[test]
-    fn test_feed_sources_operations() {
-        let (config_manager, _temp_dir) = create_test_config_manager();
-        
-        let feed_sources = vec![
-            FeedSource::new("test1".to_string(), "Test Feed 1".to_string(), "https://example.com/feed1".to_string()),
-            FeedSource::new("test2".to_string(), "Test Feed 2".to_string(), "https://example.com/feed2".to_string()),
-        ];
 
-        config_manager.save_feed_sources(&feed_sources).unwrap();
-        let loaded_sources = config_manager.load_feed_sources().unwrap();
-
-        assert_eq!(loaded_sources.len(), 2);
-        assert_eq!(loaded_sources[0].id, "test1");
-        assert_eq!(loaded_sources[1].id, "test2");
-    }
 
     #[test]
     fn test_backup_and_restore() {

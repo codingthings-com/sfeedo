@@ -4,11 +4,13 @@ use finance_news_aggregator_rs::{NewsClient, NewsArticle as ExternalNewsArticle}
 use chrono::{DateTime, Utc};
 
 /// Available financial news sources
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct NewsSource {
     pub id: String,
     pub name: String,
     pub enabled: bool,
+    pub url: String,
+    pub last_fetched: Option<String>,
 }
 
 /// Feed aggregation service that fetches and processes news from financial sources
@@ -29,13 +31,55 @@ impl FeedAggregator {
     /// Get all available news sources
     pub fn get_available_sources() -> Vec<NewsSource> {
         vec![
-            NewsSource { id: "yahoo".to_string(), name: "Yahoo Finance".to_string(), enabled: true },
-            NewsSource { id: "cnbc".to_string(), name: "CNBC Business".to_string(), enabled: true },
-            NewsSource { id: "marketwatch".to_string(), name: "MarketWatch".to_string(), enabled: true },
-            NewsSource { id: "seeking_alpha".to_string(), name: "Seeking Alpha".to_string(), enabled: true },
-            NewsSource { id: "wsj".to_string(), name: "Wall Street Journal".to_string(), enabled: true },
-            NewsSource { id: "nasdaq".to_string(), name: "NASDAQ".to_string(), enabled: true },
-            NewsSource { id: "cnn".to_string(), name: "CNN Finance".to_string(), enabled: true },
+            NewsSource { 
+                id: "yahoo".to_string(), 
+                name: "Yahoo Finance".to_string(), 
+                enabled: true,
+                url: "Built-in scraper".to_string(),
+                last_fetched: None,
+            },
+            NewsSource { 
+                id: "cnbc".to_string(), 
+                name: "CNBC Business".to_string(), 
+                enabled: true,
+                url: "Built-in scraper".to_string(),
+                last_fetched: None,
+            },
+            NewsSource { 
+                id: "marketwatch".to_string(), 
+                name: "MarketWatch".to_string(), 
+                enabled: true,
+                url: "Built-in scraper".to_string(),
+                last_fetched: None,
+            },
+            NewsSource { 
+                id: "seeking_alpha".to_string(), 
+                name: "Seeking Alpha".to_string(), 
+                enabled: true,
+                url: "Built-in scraper".to_string(),
+                last_fetched: None,
+            },
+            NewsSource { 
+                id: "wsj".to_string(), 
+                name: "Wall Street Journal".to_string(), 
+                enabled: true,
+                url: "Built-in scraper".to_string(),
+                last_fetched: None,
+            },
+            NewsSource { 
+                id: "nasdaq".to_string(), 
+                name: "NASDAQ".to_string(), 
+                enabled: true,
+                url: "Built-in scraper".to_string(),
+                last_fetched: None,
+            },
+            NewsSource { 
+                id: "cnn".to_string(), 
+                name: "CNN Finance".to_string(), 
+                enabled: true,
+                url: "Built-in scraper".to_string(),
+                last_fetched: None,
+            },
         ]
     }
 
@@ -62,7 +106,7 @@ impl FeedAggregator {
                 }
                 Err(e) => {
                     log::error!("Failed to fetch from {}: {}", source.name, e);
-                    failed_sources.push(FeedSourceError {
+                    failed_sources.push(NewsSourceError {
                         source_id: source.id.clone(),
                         source_name: source.name.clone(),
                         error: e.user_message(),
@@ -263,15 +307,15 @@ impl FeedAggregator {
 pub struct FetchResult {
     pub articles: Vec<Article>,
     pub successful_sources: Vec<String>,
-    pub failed_sources: Vec<FeedSourceError>,
+    pub failed_sources: Vec<NewsSourceError>,
     pub duration: Duration,
 }
 
 
 
-/// Error information for a failed feed source
+/// Error information for a failed news source
 #[derive(Debug, Clone)]
-pub struct FeedSourceError {
+pub struct NewsSourceError {
     pub source_id: String,
     pub source_name: String,
     pub error: String,
