@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use rusqlite::{Row, Result as SqliteResult};
 
 /// Represents a news feed source configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -27,17 +26,7 @@ impl FeedSource {
         }
     }
 
-    /// Create a FeedSource from a database row
-    pub fn from_row(row: &Row) -> SqliteResult<Self> {
-        Ok(FeedSource {
-            id: row.get("id")?,
-            name: row.get("name")?,
-            url: row.get("url")?,
-            enabled: row.get("enabled")?,
-            last_fetched: row.get("last_fetched")?,
-            created_at: row.get("created_at")?,
-        })
-    }
+
 
     /// Validate the feed source data
     pub fn validate(&self) -> Result<(), String> {

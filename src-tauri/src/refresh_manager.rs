@@ -1,6 +1,4 @@
-use crate::database::DatabaseConnection;
-use crate::database::operations::FeedSourceOperations;
-use crate::feed_aggregator::{FeedAggregator, RefreshResult};
+use crate::feed_aggregator::FetchResult;
 use crate::services::ConfigurationService;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -27,7 +25,6 @@ pub struct RefreshProgress {
 
 /// Manages feed refresh operations and scheduling
 pub struct RefreshManager {
-    db: Arc<DatabaseConnection>,
     config_service: Arc<ConfigurationService>,
     status: Arc<Mutex<RefreshStatus>>,
     progress_sender: broadcast::Sender<RefreshProgress>,
@@ -37,13 +34,11 @@ pub struct RefreshManager {
 impl RefreshManager {
     /// Create a new RefreshManager instance
     pub fn new(
-        db: Arc<DatabaseConnection>,
         config_service: Arc<ConfigurationService>,
     ) -> Self {
         let (progress_sender, _) = broadcast::channel(100);
         
         Self {
-            db,
             config_service,
             status: Arc::new(Mutex::new(RefreshStatus::Idle)),
             progress_sender,
@@ -71,7 +66,6 @@ impl RefreshManager {
 
         log::info!("Starting auto-refresh with interval: {} minutes", interval_minutes);
 
-        let db = Arc::clone(&self.db);
         let config_service = Arc::clone(&self.config_service);
         let status = Arc::clone(&self.status);
         let progress_sender = self.progress_sender.clone();
@@ -103,7 +97,6 @@ impl RefreshManager {
 
                 // Perform the refresh
                 let refresh_manager = RefreshManager {
-                    db: Arc::clone(&db),
                     config_service: Arc::clone(&config_service),
                     status: Arc::clone(&status),
                     progress_sender: progress_sender.clone(),
@@ -135,7 +128,7 @@ impl RefreshManager {
     }
 
     /// Perform a manual refresh of all enabled feeds
-    pub async fn refresh_feeds(&self) -> Result<RefreshResult, String> {
+    pub async fn refresh_feeds(&self) -> Result<FetchResult, String> {
         // Check if already in progress
         {
             let current_status = self.status.lock().unwrap();
@@ -147,13 +140,13 @@ impl RefreshManager {
         let start_time = Instant::now();
         let started_at = chrono::Utc::now().to_rfc3339();
 
-        // Get enabled feed sources
-        let feed_ops = FeedSourceOperations::new(&self.db);
-        let feed_sources = feed_ops.get_enabled()
-            .map_err(|e| format!("Failed to get enabled feed sources: {}", e))?;
+        use crate::feed_aggregator::FeedAggregator;
+        
+        let sources = FeedAggregator::get_available_sources();
+        let enabled_sources: Vec<_> = sources.iter().filter(|s| s.enabled).collect();
 
-        if feed_sources.is_empty() {
-            return Err("No enabled feed sources found".to_string());
+        if enabled_sources.is_empty() {
+            return Err("No enabled news sources found".to_string());
         }
 
         // Update status to in progress
@@ -161,7 +154,7 @@ impl RefreshManager {
             let mut status = self.status.lock().unwrap();
             *status = RefreshStatus::InProgress {
                 started_at: started_at.clone(),
-                sources_total: feed_sources.len(),
+                sources_total: enabled_sources.len(),
                 sources_completed: 0,
             };
         }
@@ -170,10 +163,10 @@ impl RefreshManager {
         self.send_progress_update(None).await;
 
         // Create feed aggregator and perform refresh
-        let aggregator = FeedAggregator::new(&self.db);
+        let mut aggregator = FeedAggregator::new();
         
-        let result = match aggregator.refresh_all_feeds(&feed_sources).await {
-            Ok(refresh_result) => {
+        let result = match aggregator.refresh_all_feeds().await {
+            Ok(fetch_result) => {
                 let duration = start_time.elapsed();
                 
                 // Update status to completed
@@ -181,19 +174,19 @@ impl RefreshManager {
                     let mut status = self.status.lock().unwrap();
                     *status = RefreshStatus::Completed {
                         duration_ms: duration.as_millis() as u64,
-                        new_articles: refresh_result.storage_result.new_articles,
-                        failed_sources: refresh_result.fetch_result.failed_sources.len(),
+                        new_articles: fetch_result.articles.len(),
+                        failed_sources: fetch_result.failed_sources.len(),
                     };
                 }
 
                 log::info!(
-                    "Refresh completed: {} new articles, {} failed sources, duration: {:?}",
-                    refresh_result.storage_result.new_articles,
-                    refresh_result.fetch_result.failed_sources.len(),
+                    "Refresh completed: {} articles fetched, {} failed sources, duration: {:?}",
+                    fetch_result.articles.len(),
+                    fetch_result.failed_sources.len(),
                     duration
                 );
 
-                Ok(refresh_result)
+                Ok(fetch_result)
             }
             Err(e) => {
                 // Update status to failed
@@ -323,31 +316,7 @@ impl RefreshManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::database::DatabaseConnection;
     use tempfile::TempDir;
-
-    #[tokio::test]
-    async fn test_refresh_status_transitions() {
-        let temp_dir = TempDir::new().unwrap();
-        let db_path = temp_dir.path().join("test.db");
-        let db = Arc::new(DatabaseConnection::new_with_path(db_path).unwrap());
-        
-        // Create a mock configuration service for testing
-        // This is a simplified test - in practice you'd need proper setup
-        let config_dir = temp_dir.path().join("config");
-        std::fs::create_dir_all(&config_dir).unwrap();
-        
-        // Skip the complex test setup for now - just test basic structure
-        // let config_service = Arc::new(ConfigurationService::new_with_path(config_dir).unwrap());
-        // let refresh_manager = RefreshManager::new(db, config_service);
-
-        // Initial status should be Idle
-        // assert!(matches!(refresh_manager.get_refresh_status(), RefreshStatus::Idle));
-
-        // Test status updates would require more complex setup with actual feed sources
-        // This is a basic structure test
-        assert!(true); // Placeholder test
-    }
 
     #[test]
     fn test_refresh_progress_serialization() {

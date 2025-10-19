@@ -67,38 +67,38 @@
     - Add error logging and user-friendly error messages
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
-- [ ] 5. Create Tauri command interface
+- [x] 5. Create Tauri command interface
 
-  - [ ] 5.1 Implement article management commands
+  - [x] 5.1 Implement article management commands
 
     - Create get_articles Tauri command with pagination
     - Implement mark_article_read functionality
     - Add article search and filtering capabilities
     - _Requirements: 1.1, 1.3, 1.4_
 
-  - [ ] 5.2 Build feed management commands
+  - [x] 5.2 Build feed management commands
 
     - Implement get_feed_sources and toggle_feed_source commands
     - Create add_feed_source and remove_feed_source commands
     - Add feed source validation commands
     - _Requirements: 2.1, 2.2, 2.3_
 
-  - [ ] 5.3 Create refresh and configuration commands
+  - [x] 5.3 Create refresh and configuration commands
     - Implement refresh_feeds command for manual refresh
     - Create update_config and get_config commands
     - Add refresh status and progress reporting commands
     - _Requirements: 3.1, 3.3, 4.1, 4.3_
 
-- [ ] 6. Build frontend user interface
+- [x] 6. Build frontend user interface
 
-  - [ ] 6.1 Create main application layout and navigation
+  - [x] 6.1 Create main application layout and navigation
 
     - Build responsive HTML/CSS layout structure
     - Implement navigation between articles and settings
     - Create loading states and progress indicators
     - _Requirements: 1.1, 4.3_
 
-  - [ ] 6.2 Implement article display and reading interface
+  - [x] 6.2 Implement article display and reading interface
 
     - Create article list component with title, summary, date
     - Build article detail view with full content
@@ -106,36 +106,36 @@
     - Add read/unread status indicators
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-  - [ ] 6.3 Build settings and configuration interface
+  - [x] 6.3 Build settings and configuration interface
 
     - Create feed source management UI (add/remove/enable/disable)
     - Implement auto-refresh configuration controls
     - Build theme and display preference settings
     - _Requirements: 2.1, 2.2, 2.3, 3.1, 3.2_
 
-  - [ ] 6.4 Implement refresh controls and status display
+  - [x] 6.4 Implement refresh controls and status display
     - Create manual refresh button with loading states
     - Add auto-refresh status indicators
     - Implement error message display system
     - _Requirements: 4.1, 4.3, 5.1_
 
-- [ ] 7. Integrate frontend with Tauri backend
+- [x] 7. Integrate frontend with Tauri backend
 
-  - [ ] 7.1 Connect article display to backend data
+  - [x] 7.1 Connect article display to backend data
 
     - Implement frontend calls to get_articles command
     - Add real-time article updates from refresh operations
     - Create article interaction handlers (read/unread, open URL)
     - _Requirements: 1.1, 1.2, 1.4_
 
-  - [ ] 7.2 Wire up configuration management
+  - [x] 7.2 Wire up configuration management
 
     - Connect settings UI to configuration commands
     - Implement real-time feed source management
     - Add configuration validation and error handling
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-  - [ ] 7.3 Implement refresh functionality integration
+  - [x] 7.3 Implement refresh functionality integration
     - Connect manual refresh button to backend command
     - Add auto-refresh status monitoring
     - Implement progress feedback and error display

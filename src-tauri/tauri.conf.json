@@ -7,5 +7,18 @@
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Sfeedo - Desktop Feed Reader",
+        "width": 600,
+        "height": 1000,
+        "minWidth": 300,
+        "minHeight": 500,
+        "resizable": true,
+        "center": true
+      }
+    ]
   }
 }

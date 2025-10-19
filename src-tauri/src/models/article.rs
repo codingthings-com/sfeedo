@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use rusqlite::{Row, Result as SqliteResult};
 
 /// Represents a news article in the feed reader
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -12,7 +11,6 @@ pub struct Article {
     pub source_id: String,
     pub published_at: String, // ISO 8601 datetime string
     pub fetched_at: String,   // ISO 8601 datetime string
-    pub is_read: bool,
 }
 
 impl Article {
@@ -27,7 +25,7 @@ impl Article {
         published_at: String,
     ) -> Self {
         let now = chrono::Utc::now().to_rfc3339();
-        
+
         Self {
             id,
             title,
@@ -37,24 +35,10 @@ impl Article {
             source_id,
             published_at,
             fetched_at: now,
-            is_read: false,
         }
     }
 
-    /// Create an Article from a database row
-    pub fn from_row(row: &Row) -> SqliteResult<Self> {
-        Ok(Article {
-            id: row.get("id")?,
-            title: row.get("title")?,
-            summary: row.get("summary")?,
-            content: row.get("content")?,
-            url: row.get("url")?,
-            source_id: row.get("source_id")?,
-            published_at: row.get("published_at")?,
-            fetched_at: row.get("fetched_at")?,
-            is_read: row.get("is_read")?,
-        })
-    }
+
 
     /// Validate the article data
     pub fn validate(&self) -> Result<(), String> {
@@ -90,13 +74,5 @@ impl Article {
         Ok(())
     }
 
-    /// Mark the article as read
-    pub fn mark_as_read(&mut self) {
-        self.is_read = true;
-    }
 
-    /// Mark the article as unread
-    pub fn mark_as_unread(&mut self) {
-        self.is_read = false;
-    }
 }

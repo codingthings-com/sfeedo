@@ -32,6 +32,22 @@ impl ConfigManager {
         })
     }
 
+    /// Create a new ConfigManager instance with a custom path (for testing)
+    pub fn new_with_path(config_dir: &Path) -> Result<Self, String> {
+        let config_file = config_dir.join("config.json");
+
+        // Ensure config directory exists
+        if !config_dir.exists() {
+            fs::create_dir_all(config_dir)
+                .map_err(|e| format!("Failed to create config directory: {}", e))?;
+        }
+
+        Ok(Self {
+            config_dir: config_dir.to_path_buf(),
+            config_file,
+        })
+    }
+
     /// Load configuration from JSON file
     pub fn load_config(&self) -> Result<AppConfig, String> {
         if !self.config_file.exists() {
