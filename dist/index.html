@@ -3,56 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>sfeedo</title>
-  <script type="module" crossorigin src="/assets/index-c03zhMJV.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-JuKzXnBl.css">
+    <title>SFEEDO TELETEXT</title>
+  <script type="module" crossorigin src="/assets/index-DZfdkGTO.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-Csbj2N5k.css">
 </head>
 <body>
     <div id="app">
-        <!-- Header with navigation -->
-        <header class="app-header">
-            <div class="header-content">
-                <h1 class="app-title">sfeedo</h1>
-                <nav class="main-nav">
-                    <button class="nav-btn active" data-view="articles">
-                        <span class="nav-icon">📰</span>
-                        Articles
-                    </button>
-                    <button class="nav-btn" data-view="settings">
-                        <span class="nav-icon">⚙️</span>
-                        Settings
-                    </button>
-                </nav>
-                <div class="header-actions">
-                    <button id="refresh-btn" class="action-btn" title="Refresh feeds">
-                        <span class="refresh-icon">🔄</span>
-                    </button>
-                </div>
+        <!-- Teletext Header -->
+        <header class="teletext-header">
+            <div class="teletext-title-bar">
+                <span class="teletext-logo">SFEEDO</span>
+                <span class="teletext-page-info">P100</span>
+            </div>
+            <div class="teletext-nav">
+                <button class="teletext-nav-btn active" data-view="articles">
+                    100 NEWS
+                </button>
+                <button class="teletext-nav-btn" data-view="settings">
+                    200 SETUP
+                </button>
+                <button id="refresh-btn" class="teletext-refresh-btn">
+                    REFRESH
+                </button>
             </div>
         </header>
 
-        <!-- Main content area -->
-        <main class="app-main">
+        <!-- Main teletext content -->
+        <main class="teletext-main">
             <!-- Articles view -->
-            <div id="articles-view" class="view active">
-                <div class="view-header">
-                    <h2>Latest Articles</h2>
-                    <div class="view-controls">
-                        <select id="sort-select" class="control-select">
-                            <option value="newest">Newest First</option>
-                            <option value="oldest">Oldest First</option>
-                        </select>
+            <div id="articles-view" class="teletext-view active">
+                <div class="teletext-view-header">
+                    <div class="teletext-header-line">
+                        <span class="teletext-section-title">FINANCIAL NEWS</span>
+                        <div class="teletext-sort-controls">
+                            <button id="sort-up-btn" class="teletext-sort-btn active" data-sort="newest">▲</button>
+                            <button id="sort-down-btn" class="teletext-sort-btn" data-sort="oldest">▼</button>
+                        </div>
                     </div>
                 </div>
-                <div id="articles-container" class="articles-container">
+                <div id="articles-container" class="teletext-articles">
                     <!-- Articles will be loaded here -->
                 </div>
             </div>
 
             <!-- Settings view -->
-            <div id="settings-view" class="view">
-                <div class="view-header">
-                    <h2>Settings</h2>
+            <div id="settings-view" class="teletext-view">
+                <div class="teletext-view-header">
+                    <span class="teletext-section-title">SYSTEM SETUP</span>
                 </div>
                 <div class="settings-container">
                     <!-- Settings content will be loaded here -->
@@ -61,20 +58,20 @@
         </main>
 
         <!-- Loading overlay -->
-        <div id="loading-overlay" class="loading-overlay hidden">
-            <div class="loading-content">
-                <div class="spinner"></div>
-                <p class="loading-text">Loading...</p>
+        <div id="loading-overlay" class="teletext-loading hidden">
+            <div class="teletext-loading-content">
+                <div class="teletext-spinner">█</div>
+                <p class="teletext-loading-text">LOADING...</p>
             </div>
         </div>
 
         <!-- Status bar -->
-        <footer class="status-bar">
-            <div class="status-content">
-                <span id="status-text" class="status-text">Ready</span>
-                <div class="status-indicators">
-                    <span id="auto-refresh-indicator" class="indicator hidden">Auto-refresh: ON</span>
-                    <span id="last-update" class="last-update">Never updated</span>
+        <footer class="teletext-status">
+            <div class="teletext-status-content">
+                <span id="status-text" class="teletext-status-text">READY</span>
+                <div class="teletext-status-indicators">
+                    <span id="auto-refresh-indicator" class="teletext-indicator hidden">AUTO: ON</span>
+                    <span id="last-update" class="teletext-last-update">NEVER UPDATED</span>
                 </div>
             </div>
         </footer>

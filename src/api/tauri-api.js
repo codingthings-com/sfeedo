@@ -159,7 +159,7 @@ export class FeedSourceAPI {
   static async toggleFeedSource(id, enabled) {
     try {
       return await invoke('update_feed_source_enabled', { 
-        source_id: id, 
+        sourceId: id, 
         enabled 
       });
     } catch (error) {

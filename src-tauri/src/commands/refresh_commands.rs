@@ -243,6 +243,8 @@ pub async fn get_feed_sources(
     let config_service = ConfigurationService::new(&app_handle)?;
     let config = config_service.get_app_config()?;
     
+    log::info!("Getting feed sources from config, found {} sources", config.feed_sources.len());
+    
     let sources = FeedAggregator::get_available_sources_from_config(&config);
     Ok(sources)
 }
@@ -266,27 +268,31 @@ pub struct ConfigInfo {
     pub enabled_feed_sources: usize,
 }
 
-/// Parameters for updating feed source enabled state
-#[derive(Debug, Deserialize)]
-pub struct UpdateFeedSourceParams {
-    pub source_id: String,
-    pub enabled: bool,
-}
+
 
 #[tauri::command]
 pub async fn update_feed_source_enabled(
-    params: UpdateFeedSourceParams,
+    sourceId: String,
+    enabled: bool,
     app_handle: AppHandle,
 ) -> Result<(), String> {
+    log::info!("Updating feed source '{}' to enabled={}", sourceId, enabled);
+    
     let service = ConfigurationService::new(&app_handle)?;
     let mut config = service.get_app_config()?;
 
+    log::info!("Current config has {} feed sources", config.feed_sources.len());
+
     // Find and update the feed source
-    if let Some(source) = config.feed_sources.iter_mut().find(|s| s.id == params.source_id) {
-        source.enabled = params.enabled;
+    if let Some(source) = config.feed_sources.iter_mut().find(|s| s.id == sourceId) {
+        log::info!("Found source '{}', updating enabled from {} to {}", source.name, source.enabled, enabled);
+        source.enabled = enabled;
         service.update_app_config(config)?;
+        log::info!("Successfully updated feed source '{}'", sourceId);
         Ok(())
     } else {
-        Err(format!("Feed source '{}' not found", params.source_id))
+        let available_sources: Vec<String> = config.feed_sources.iter().map(|s| s.id.clone()).collect();
+        log::error!("Feed source '{}' not found. Available sources: {:?}", sourceId, available_sources);
+        Err(format!("Feed source '{}' not found", sourceId))
     }
 }

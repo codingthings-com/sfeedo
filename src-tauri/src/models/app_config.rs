@@ -37,7 +37,7 @@ impl Default for AppConfig {
         Self {
             auto_refresh: AutoRefreshConfig {
                 enabled: true,
-                interval_minutes: 5,
+                interval_minutes: 30,
             },
             ui: UiConfig {
                 show_notifications: true,
