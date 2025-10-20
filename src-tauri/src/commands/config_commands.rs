@@ -23,6 +23,21 @@ pub async fn reset_config_to_defaults(app_handle: AppHandle) -> Result<(), Strin
 }
 
 #[tauri::command]
+pub async fn delete_config_file(app_handle: AppHandle) -> Result<String, String> {
+    let service = ConfigurationService::new(&app_handle)?;
+    let config_dir = service.get_config_directory();
+    let config_file = std::path::Path::new(&config_dir).join("config.json");
+    
+    if config_file.exists() {
+        std::fs::remove_file(&config_file)
+            .map_err(|e| format!("Failed to delete config file: {}", e))?;
+        Ok(format!("Config file deleted: {}", config_file.display()))
+    } else {
+        Ok("Config file does not exist".to_string())
+    }
+}
+
+#[tauri::command]
 pub async fn backup_configuration(app_handle: AppHandle) -> Result<String, String> {
     let service = ConfigurationService::new(&app_handle)?;
     service.backup_configuration()

@@ -29,7 +29,8 @@ pub fn run() {
             export_config,
             get_config_info,
             get_feed_sources,
-            update_feed_source_enabled
+            update_feed_source_enabled,
+            delete_config_file
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

@@ -244,6 +244,19 @@ export class ConfigAPI {
       throw new Error(`Failed to reset configuration: ${error}`);
     }
   }
+
+  /**
+   * Delete the config file to reset to defaults
+   * @returns {Promise<string>} Result message
+   */
+  static async deleteConfigFile() {
+    try {
+      return await invoke('delete_config_file');
+    } catch (error) {
+      console.error('Failed to delete config file:', error);
+      throw new Error(`Failed to delete config file: ${error}`);
+    }
+  }
 }
 
 /**
