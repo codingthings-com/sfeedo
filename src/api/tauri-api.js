@@ -109,7 +109,8 @@ export class FeedSourceAPI {
    */
   static async getEnabledFeedSources() {
     try {
-      return await invoke('get_enabled_feed_sources_db');
+      const sources = await invoke('get_feed_sources');
+      return sources.filter(source => source.enabled);
     } catch (error) {
       console.error('Failed to get enabled feed sources:', error);
       throw new Error(`Failed to load enabled feed sources: ${error}`);
@@ -117,48 +118,37 @@ export class FeedSourceAPI {
   }
 
   /**
-   * Add a new feed source
-   * @param {string} name - Feed source name
-   * @param {string} url - Feed URL
+   * Update feed source enabled state
+   * @param {string} sourceId - Feed source ID
    * @param {boolean} enabled - Whether the source should be enabled
-   * @returns {Promise<Object>} Created feed source
+   * @returns {Promise<void>} Success status
    */
-  static async addFeedSource(name, url, enabled = true) {
+  static async updateFeedSourceEnabled(sourceId, enabled) {
     try {
-      return await invoke('add_feed_source_db', { name, url, enabled });
-    } catch (error) {
-      console.error('Failed to add feed source:', error);
-      throw new Error(`Failed to add feed source: ${error}`);
-    }
-  }
-
-  /**
-   * Update an existing feed source
-   * @param {Object} feedSource - Feed source object to update
-   * @returns {Promise<boolean>} Success status
-   */
-  static async updateFeedSource(feedSource) {
-    try {
-      return await invoke('update_feed_source_db', { feedSource });
+      return await invoke('update_feed_source_enabled', { 
+        source_id: sourceId, 
+        enabled 
+      });
     } catch (error) {
       console.error('Failed to update feed source:', error);
       throw new Error(`Failed to update feed source: ${error}`);
     }
   }
 
-  /**
-   * Remove a feed source
-   * @param {string} id - Feed source ID
-   * @returns {Promise<boolean>} Success status
-   */
-  static async removeFeedSource(id) {
-    try {
-      return await invoke('remove_feed_source_db', { id });
-    } catch (error) {
-      console.error('Failed to remove feed source:', error);
-      throw new Error(`Failed to remove feed source: ${error}`);
-    }
-  }
+  // Note: Add/Remove feed sources not implemented - only built-in sources can be enabled/disabled
+  // /**
+  //  * Remove a feed source
+  //  * @param {string} id - Feed source ID
+  //  * @returns {Promise<boolean>} Success status
+  //  */
+  // static async removeFeedSource(id) {
+  //   try {
+  //     return await invoke('remove_feed_source_db', { id });
+  //   } catch (error) {
+  //     console.error('Failed to remove feed source:', error);
+  //     throw new Error(`Failed to remove feed source: ${error}`);
+  //   }
+  // }
 
   /**
    * Toggle feed source enabled status
@@ -168,7 +158,10 @@ export class FeedSourceAPI {
    */
   static async toggleFeedSource(id, enabled) {
     try {
-      return await invoke('toggle_feed_source_db', { id, enabled });
+      return await invoke('update_feed_source_enabled', { 
+        source_id: id, 
+        enabled 
+      });
     } catch (error) {
       console.error('Failed to toggle feed source:', error);
       throw new Error(`Failed to toggle feed source: ${error}`);

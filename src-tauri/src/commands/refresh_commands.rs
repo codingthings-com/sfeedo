@@ -236,11 +236,14 @@ pub async fn get_config_info(app_handle: AppHandle) -> Result<ConfigInfo, String
 
 #[tauri::command]
 pub async fn get_feed_sources(
-    _app_handle: AppHandle,
+    app_handle: AppHandle,
 ) -> Result<Vec<crate::feed_aggregator::NewsSource>, String> {
     use crate::feed_aggregator::FeedAggregator;
 
-    let sources = FeedAggregator::get_available_sources();
+    let config_service = ConfigurationService::new(&app_handle)?;
+    let config = config_service.get_app_config()?;
+    
+    let sources = FeedAggregator::get_available_sources_from_config(&config);
     Ok(sources)
 }
 
@@ -261,4 +264,29 @@ pub struct ConfigInfo {
     pub auto_refresh_interval: u32,
     pub total_feed_sources: usize,
     pub enabled_feed_sources: usize,
+}
+
+/// Parameters for updating feed source enabled state
+#[derive(Debug, Deserialize)]
+pub struct UpdateFeedSourceParams {
+    pub source_id: String,
+    pub enabled: bool,
+}
+
+#[tauri::command]
+pub async fn update_feed_source_enabled(
+    params: UpdateFeedSourceParams,
+    app_handle: AppHandle,
+) -> Result<(), String> {
+    let service = ConfigurationService::new(&app_handle)?;
+    let mut config = service.get_app_config()?;
+
+    // Find and update the feed source
+    if let Some(source) = config.feed_sources.iter_mut().find(|s| s.id == params.source_id) {
+        source.enabled = params.enabled;
+        service.update_app_config(config)?;
+        Ok(())
+    } else {
+        Err(format!("Feed source '{}' not found", params.source_id))
+    }
 }
