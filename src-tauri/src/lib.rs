@@ -31,7 +31,8 @@ pub fn run() {
             get_feed_sources,
             update_feed_source_enabled,
             delete_config_file,
-            get_config_file_path
+            get_config_file_path,
+            open_url_in_browser
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

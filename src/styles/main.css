@@ -190,7 +190,8 @@ body {
     padding: 8px;
     cursor: pointer;
     transition: all 0.1s;
-    min-height: 72px; /* 3 lines max */
+    min-height: 72px;
+    /* 3 lines max */
     max-height: 72px;
     overflow: hidden;
 }
@@ -283,8 +284,16 @@ body {
 }
 
 @keyframes blink {
-    0%, 50% { opacity: 1; }
-    51%, 100% { opacity: 0; }
+
+    0%,
+    50% {
+        opacity: 1;
+    }
+
+    51%,
+    100% {
+        opacity: 0;
+    }
 }
 
 /* Status bar */
@@ -465,6 +474,16 @@ body {
     color: #000;
 }
 
+.teletext-btn-danger {
+    border-color: #ff0000;
+    color: #ff0000;
+}
+
+.teletext-btn-danger:hover {
+    background: #ff0000;
+    color: #000;
+}
+
 /* Empty and error states */
 .teletext-empty-state,
 .teletext-error-state {
@@ -626,11 +645,11 @@ body {
     transition: 0.2s;
 }
 
-input:checked + .teletext-toggle-slider {
+input:checked+.teletext-toggle-slider {
     background-color: #001100;
 }
 
-input:checked + .teletext-toggle-slider:before {
+input:checked+.teletext-toggle-slider:before {
     transform: translateX(16px);
     background-color: #ffff00;
 }
@@ -640,37 +659,37 @@ input:checked + .teletext-toggle-slider:before {
     body {
         font-size: 12px;
     }
-    
+
     .teletext-title-bar {
         padding: 6px 12px;
         font-size: 14px;
     }
-    
+
     .teletext-nav {
         padding: 4px 12px;
         gap: 12px;
     }
-    
+
     .teletext-nav-btn,
     .teletext-refresh-btn {
         font-size: 12px;
         padding: 3px 6px;
     }
-    
+
     .teletext-view {
         padding: 12px;
     }
-    
+
     .teletext-article {
         padding: 6px;
-        min-height: 60px;
-        max-height: 60px;
+        min-height: 72;
+        max-height: 72px;
     }
-    
+
     .teletext-article-title {
         font-size: 12px;
     }
-    
+
     .teletext-article-content {
         font-size: 11px;
     }
@@ -694,7 +713,7 @@ input:checked + .teletext-toggle-slider:before {
     .teletext-article {
         border-width: 2px;
     }
-    
+
     .teletext-modal-content {
         border-width: 3px;
     }
@@ -705,11 +724,12 @@ input:checked + .teletext-toggle-slider:before {
     .teletext-spinner {
         animation: none;
     }
-    
+
     * {
         transition: none !important;
     }
 }
+
 /* 
 Additional teletext settings styles */
 .teletext-feed-sources-list {
@@ -752,12 +772,16 @@ Additional teletext settings styles */
 
 /* Animation for the teletext spinner */
 @keyframes teletext-blink {
-    0%, 50% { 
-        opacity: 1; 
+
+    0%,
+    50% {
+        opacity: 1;
         color: #ffff00;
     }
-    51%, 100% { 
-        opacity: 0.3; 
+
+    51%,
+    100% {
+        opacity: 0.3;
         color: #666600;
     }
 }
@@ -778,21 +802,21 @@ Additional teletext settings styles */
         gap: 8px;
         align-items: flex-start;
     }
-    
+
     .teletext-sort-controls {
         align-self: flex-end;
     }
-    
+
     .teletext-setting-item {
         flex-direction: column;
         gap: 8px;
         align-items: flex-start;
     }
-    
+
     .teletext-setting-control {
         align-self: stretch;
     }
-    
+
     .teletext-about-actions {
         flex-direction: column;
     }
@@ -804,7 +828,7 @@ Additional teletext settings styles */
         background: white !important;
         color: black !important;
     }
-    
+
     .teletext-header,
     .teletext-status,
     .teletext-article-actions {

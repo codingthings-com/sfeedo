@@ -96,6 +96,7 @@ class SettingsManager {
         ${this.renderFeedSourcesSection()}
         ${this.renderAutoRefreshSection()}
         ${this.renderUIPreferencesSection()}
+        ${this.renderConfigurationSection()}
         ${this.renderAboutSection()}
       </div>
     `;
@@ -214,6 +215,42 @@ class SettingsManager {
                        data-setting="ui.show_notifications">
                 <span class="teletext-toggle-slider"></span>
               </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Render configuration management section - teletext style
+  renderConfigurationSection() {
+    return `
+      <div class="teletext-settings-section">
+        <div class="teletext-section-header">
+          <h3 class="teletext-section-title">CONFIGURATION</h3>
+        </div>
+        <div class="teletext-section-content">
+          <p class="teletext-section-description">
+            MANAGE APPLICATION CONFIGURATION AND RESET TO DEFAULTS IF NEEDED.
+          </p>
+          <div class="teletext-config-actions">
+            <div class="teletext-setting-item">
+              <div class="teletext-setting-info">
+                <label class="teletext-setting-label">RESET CONFIGURATION</label>
+                <p class="teletext-setting-description">DELETE CONFIG FILE AND RESTORE DEFAULT SETTINGS</p>
+              </div>
+              <button class="teletext-btn teletext-btn-danger" data-action="reset-config">
+                RESET TO DEFAULTS
+              </button>
+            </div>
+            <div class="teletext-setting-item">
+              <div class="teletext-setting-info">
+                <label class="teletext-setting-label">BACKUP CONFIGURATION</label>
+                <p class="teletext-setting-description">CREATE A BACKUP OF CURRENT SETTINGS</p>
+              </div>
+              <button class="teletext-btn" data-action="backup-config">
+                CREATE BACKUP
+              </button>
             </div>
           </div>
         </div>
@@ -345,6 +382,12 @@ class SettingsManager {
         break;
       case 'view-logs':
         this.viewLogs();
+        break;
+      case 'reset-config':
+        await this.resetConfiguration();
+        break;
+      case 'backup-config':
+        await this.backupConfiguration();
         break;
     }
   }
@@ -604,6 +647,48 @@ class SettingsManager {
         is_valid: false,
         error_message: 'Failed to validate URL'
       };
+    }
+  }
+
+  // Reset configuration to defaults
+  async resetConfiguration() {
+    if (!confirm('Are you sure you want to reset all settings to defaults? This cannot be undone.')) {
+      return;
+    }
+
+    try {
+      window.AppNavigation.showProgress('Resetting configuration...');
+      
+      // Delete the config file to force recreation with defaults
+      await TauriAPI.config.deleteConfigFile();
+      
+      window.AppNavigation.hideProgress();
+      window.AppNavigation.updateStatus('Configuration reset successfully');
+      
+      // Reload the configuration
+      await this.loadConfiguration();
+      
+    } catch (error) {
+      console.error('Failed to reset configuration:', error);
+      window.AppNavigation.hideProgress();
+      window.AppNavigation.updateStatus('Failed to reset configuration');
+    }
+  }
+
+  // Backup configuration
+  async backupConfiguration() {
+    try {
+      window.AppNavigation.showProgress('Creating backup...');
+      
+      const backupPath = await TauriAPI.config.backupConfiguration();
+      
+      window.AppNavigation.hideProgress();
+      window.AppNavigation.updateStatus(`Configuration backed up to: ${backupPath}`);
+      
+    } catch (error) {
+      console.error('Failed to backup configuration:', error);
+      window.AppNavigation.hideProgress();
+      window.AppNavigation.updateStatus('Failed to create backup');
     }
   }
 }

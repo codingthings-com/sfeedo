@@ -321,7 +321,7 @@ export class RefreshAPI {
  */
 export class UtilityAPI {
   /**
-   * Open URL in external browser
+   * Open URL in external browser using Tauri command
    * @param {string} url - URL to open
    * @returns {Promise<void>}
    */
@@ -332,41 +332,19 @@ export class UtilityAPI {
         throw new Error('Invalid URL provided');
       }
       
-      // Ensure URL has protocol
-      let validUrl = url;
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        validUrl = 'https://' + url;
-      }
+      // Use Tauri command to open URL in default browser
+      await invoke('open_url_in_browser', { url });
       
-      // Open in new tab/window
-      const newWindow = window.open(validUrl, '_blank', 'noopener,noreferrer');
-      
-      // Check if popup was blocked
-      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-        // Popup was likely blocked, show user the URL
-        const userWantsToOpen = confirm(`Popup blocked. Open this URL manually?\n\n${validUrl}`);
-        if (userWantsToOpen) {
-          // Try to copy to clipboard if possible
-          try {
-            await navigator.clipboard.writeText(validUrl);
-            alert('URL copied to clipboard!');
-          } catch (clipboardError) {
-            // Show URL for manual copying
-            prompt('Copy this URL:', validUrl);
-          }
-        }
-      }
     } catch (error) {
       console.error('Failed to open external URL:', error);
-      // Show URL to user as fallback
-      const userWantsToOpen = confirm(`Could not open URL automatically. Open manually?\n\n${url}`);
-      if (userWantsToOpen) {
-        try {
-          await navigator.clipboard.writeText(url);
-          alert('URL copied to clipboard!');
-        } catch (clipboardError) {
-          prompt('Copy this URL:', url);
-        }
+      
+      // Fallback: try to copy to clipboard
+      try {
+        await navigator.clipboard.writeText(url);
+        alert('Could not open URL in browser. URL copied to clipboard!');
+      } catch (clipboardError) {
+        // Final fallback: show URL for manual copying
+        prompt('Could not open URL or copy to clipboard. Please copy manually:', url);
       }
     }
   }
