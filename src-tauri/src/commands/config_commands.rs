@@ -39,9 +39,3 @@ pub async fn sync_configuration(app_handle: AppHandle) -> Result<(), String> {
     let service = ConfigurationService::new(&app_handle)?;
     service.sync_configuration()
 }
-
-#[tauri::command]
-pub async fn initialize_default_feed_sources(app_handle: AppHandle) -> Result<(), String> {
-    let service = ConfigurationService::new(&app_handle)?;
-    service.initialize_default_feed_sources()
-}

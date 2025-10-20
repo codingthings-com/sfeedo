@@ -92,7 +92,7 @@ class SettingsManager {
 
     console.log('SettingsManager: Rendering full settings');
     const settingsHTML = `
-      <div class="settings-sections">
+      <div class="teletext-settings-sections">
         ${this.renderFeedSourcesSection()}
         ${this.renderAutoRefreshSection()}
         ${this.renderUIPreferencesSection()}
@@ -105,46 +105,37 @@ class SettingsManager {
     console.log('SettingsManager: Settings rendered successfully');
   }
 
-  // Render feed sources management section
+  // Render feed sources management section - teletext style
   renderFeedSourcesSection() {
     const feedSourcesHTML = this.feedSources.map(source => `
-      <div class="feed-source-item" data-source-id="${source.id}">
-        <div class="feed-source-info">
-          <div class="feed-source-header">
-            <h4 class="feed-source-name">${this.escapeHtml(source.name)}</h4>
-            <div class="feed-source-toggle">
-              <label class="toggle-switch">
-                <input type="checkbox" ${source.enabled ? 'checked' : ''} 
-                       data-action="toggle-source" data-source-id="${source.id}">
-                <span class="toggle-slider"></span>
-              </label>
-            </div>
-          </div>
-          <p class="feed-source-url">${this.escapeHtml(source.url)}</p>
-          <div class="feed-source-status">
-            <span class="status-indicator ${source.enabled ? 'enabled' : 'disabled'}">
-              ${source.enabled ? '✓ Active' : '○ Disabled'}
-            </span>
-            <span class="last-fetched">Built-in financial news scraper</span>
-          </div>
+      <div class="teletext-setting-item" data-source-id="${source.id}">
+        <div class="teletext-setting-info">
+          <label class="teletext-setting-label">${this.escapeHtml(source.name).toUpperCase()}</label>
+          <p class="teletext-setting-description">${this.escapeHtml(source.url).toUpperCase()}</p>
+          <p class="teletext-setting-description">
+            ${source.enabled ? '[ACTIVE]' : '[DISABLED]'} - BUILT-IN FINANCIAL NEWS SCRAPER
+          </p>
+        </div>
+        <div class="teletext-setting-control">
+          <label class="teletext-toggle-switch">
+            <input type="checkbox" ${source.enabled ? 'checked' : ''} 
+                   data-action="toggle-source" data-source-id="${source.id}">
+            <span class="teletext-toggle-slider"></span>
+          </label>
         </div>
       </div>
     `).join('');
 
     return `
-      <div class="settings-section">
-        <div class="section-header">
-          <h3 class="section-title">Feed Sources</h3>
-          <button class="btn btn-primary" data-action="add-source">
-            <span class="btn-icon">+</span>
-            Add Feed Source
-          </button>
+      <div class="teletext-settings-section">
+        <div class="teletext-section-header">
+          <h3 class="teletext-section-title">FEED SOURCES</h3>
         </div>
-        <div class="section-content">
-          <p class="section-description">
-            Manage your news feed sources. Enable or disable sources to customize your news feed.
+        <div class="teletext-section-content">
+          <p class="teletext-section-description">
+            MANAGE NEWS FEED SOURCES. ENABLE OR DISABLE SOURCES TO CUSTOMIZE FEED.
           </p>
-          <div class="feed-sources-list">
+          <div class="teletext-feed-sources-list">
             ${feedSourcesHTML}
           </div>
         </div>
@@ -152,45 +143,45 @@ class SettingsManager {
     `;
   }
 
-  // Render auto-refresh configuration section
+  // Render auto-refresh configuration section - teletext style
   renderAutoRefreshSection() {
     return `
-      <div class="settings-section">
-        <div class="section-header">
-          <h3 class="section-title">Auto-Refresh Settings</h3>
+      <div class="teletext-settings-section">
+        <div class="teletext-section-header">
+          <h3 class="teletext-section-title">AUTO-REFRESH SETTINGS</h3>
         </div>
-        <div class="section-content">
-          <div class="setting-item">
-            <div class="setting-info">
-              <label class="setting-label">Enable Auto-Refresh</label>
-              <p class="setting-description">Automatically refresh feeds at regular intervals</p>
+        <div class="teletext-section-content">
+          <div class="teletext-setting-item">
+            <div class="teletext-setting-info">
+              <label class="teletext-setting-label">ENABLE AUTO-REFRESH</label>
+              <p class="teletext-setting-description">AUTOMATICALLY REFRESH FEEDS AT REGULAR INTERVALS</p>
             </div>
-            <div class="setting-control">
-              <label class="toggle-switch">
+            <div class="teletext-setting-control">
+              <label class="teletext-toggle-switch">
                 <input type="checkbox" ${this.config.auto_refresh.enabled ? 'checked' : ''} 
                        data-setting="auto_refresh.enabled">
-                <span class="toggle-slider"></span>
+                <span class="teletext-toggle-slider"></span>
               </label>
             </div>
           </div>
           
-          <div class="setting-item ${!this.config.auto_refresh.enabled ? 'disabled' : ''}">
-            <div class="setting-info">
-              <label class="setting-label">Refresh Interval</label>
-              <p class="setting-description">How often to check for new articles</p>
+          <div class="teletext-setting-item ${!this.config.auto_refresh.enabled ? 'disabled' : ''}">
+            <div class="teletext-setting-info">
+              <label class="teletext-setting-label">REFRESH INTERVAL</label>
+              <p class="teletext-setting-description">HOW OFTEN TO CHECK FOR NEW ARTICLES</p>
             </div>
-            <div class="setting-control">
-              <select class="setting-select" data-setting="auto_refresh.interval_minutes" 
+            <div class="teletext-setting-control">
+              <select class="teletext-setting-select" data-setting="auto_refresh.interval_minutes" 
                       ${!this.config.auto_refresh.enabled ? 'disabled' : ''}>
-                <option value="2" ${this.config.auto_refresh.interval_minutes === 2 ? 'selected' : ''}>2 minutes</option>
-                <option value="5" ${this.config.auto_refresh.interval_minutes === 5 ? 'selected' : ''}>5 minutes</option>
-                <option value="15" ${this.config.auto_refresh.interval_minutes === 15 ? 'selected' : ''}>15 minutes</option>
-                <option value="30" ${this.config.auto_refresh.interval_minutes === 30 ? 'selected' : ''}>30 minutes</option>
-                <option value="60" ${this.config.auto_refresh.interval_minutes === 60 ? 'selected' : ''}>1 hour</option>
-                <option value="120" ${this.config.auto_refresh.interval_minutes === 120 ? 'selected' : ''}>2 hours</option>
-                <option value="360" ${this.config.auto_refresh.interval_minutes === 360 ? 'selected' : ''}>6 hours</option>
-                <option value="720" ${this.config.auto_refresh.interval_minutes === 720 ? 'selected' : ''}>12 hours</option>
-                <option value="1440" ${this.config.auto_refresh.interval_minutes === 1440 ? 'selected' : ''}>24 hours</option>
+                <option value="2" ${this.config.auto_refresh.interval_minutes === 2 ? 'selected' : ''}>2 MINUTES</option>
+                <option value="5" ${this.config.auto_refresh.interval_minutes === 5 ? 'selected' : ''}>5 MINUTES</option>
+                <option value="15" ${this.config.auto_refresh.interval_minutes === 15 ? 'selected' : ''}>15 MINUTES</option>
+                <option value="30" ${this.config.auto_refresh.interval_minutes === 30 ? 'selected' : ''}>30 MINUTES</option>
+                <option value="60" ${this.config.auto_refresh.interval_minutes === 60 ? 'selected' : ''}>1 HOUR</option>
+                <option value="120" ${this.config.auto_refresh.interval_minutes === 120 ? 'selected' : ''}>2 HOURS</option>
+                <option value="360" ${this.config.auto_refresh.interval_minutes === 360 ? 'selected' : ''}>6 HOURS</option>
+                <option value="720" ${this.config.auto_refresh.interval_minutes === 720 ? 'selected' : ''}>12 HOURS</option>
+                <option value="1440" ${this.config.auto_refresh.interval_minutes === 1440 ? 'selected' : ''}>24 HOURS</option>
               </select>
             </div>
           </div>
@@ -199,60 +190,29 @@ class SettingsManager {
     `;
   }
 
-  // Render UI preferences section
+  // Render UI preferences section - teletext style
   renderUIPreferencesSection() {
     // Use default values if ui config is not available
     const uiConfig = this.config.ui || {
-      theme: 'system',
-      articles_per_page: 20,
       show_notifications: true
     };
 
     return `
-      <div class="settings-section">
-        <div class="section-header">
-          <h3 class="section-title">Display Preferences</h3>
+      <div class="teletext-settings-section">
+        <div class="teletext-section-header">
+          <h3 class="teletext-section-title">DISPLAY PREFERENCES</h3>
         </div>
-        <div class="section-content">
-          <div class="setting-item">
-            <div class="setting-info">
-              <label class="setting-label">Theme</label>
-              <p class="setting-description">Choose your preferred color scheme</p>
+        <div class="teletext-section-content">
+          <div class="teletext-setting-item">
+            <div class="teletext-setting-info">
+              <label class="teletext-setting-label">SHOW NOTIFICATIONS</label>
+              <p class="teletext-setting-description">DISPLAY NOTIFICATIONS FOR NEW ARTICLES</p>
             </div>
-            <div class="setting-control">
-              <select class="setting-select" data-setting="ui.theme">
-                <option value="light" ${uiConfig.theme === 'light' ? 'selected' : ''}>Light</option>
-                <option value="dark" ${uiConfig.theme === 'dark' ? 'selected' : ''}>Dark</option>
-                <option value="system" ${uiConfig.theme === 'system' ? 'selected' : ''}>System</option>
-              </select>
-            </div>
-          </div>
-          
-          <div class="setting-item">
-            <div class="setting-info">
-              <label class="setting-label">Articles Per Page</label>
-              <p class="setting-description">Number of articles to display at once</p>
-            </div>
-            <div class="setting-control">
-              <select class="setting-select" data-setting="ui.articles_per_page">
-                <option value="10" ${uiConfig.articles_per_page === 10 ? 'selected' : ''}>10</option>
-                <option value="20" ${uiConfig.articles_per_page === 20 ? 'selected' : ''}>20</option>
-                <option value="50" ${uiConfig.articles_per_page === 50 ? 'selected' : ''}>50</option>
-                <option value="100" ${uiConfig.articles_per_page === 100 ? 'selected' : ''}>100</option>
-              </select>
-            </div>
-          </div>
-          
-          <div class="setting-item">
-            <div class="setting-info">
-              <label class="setting-label">Show Notifications</label>
-              <p class="setting-description">Display notifications for new articles</p>
-            </div>
-            <div class="setting-control">
-              <label class="toggle-switch">
+            <div class="teletext-setting-control">
+              <label class="teletext-toggle-switch">
                 <input type="checkbox" ${uiConfig.show_notifications ? 'checked' : ''} 
                        data-setting="ui.show_notifications">
-                <span class="toggle-slider"></span>
+                <span class="teletext-toggle-slider"></span>
               </label>
             </div>
           </div>
@@ -261,24 +221,28 @@ class SettingsManager {
     `;
   }
 
-  // Render about section
+  // Render about section - teletext style
   renderAboutSection() {
     return `
-      <div class="settings-section">
-        <div class="section-header">
-          <h3 class="section-title">About</h3>
+      <div class="teletext-settings-section">
+        <div class="teletext-section-header">
+          <h3 class="teletext-section-title">ABOUT</h3>
         </div>
-        <div class="section-content">
-          <div class="about-info">
-            <h4>Sfeedo Desktop Feed Reader</h4>
-            <p>Version 0.1.0</p>
-            <p>A modern RSS/Atom feed aggregator built with Tauri and Rust.</p>
-            <div class="about-actions">
-              <button class="btn btn-outline" data-action="check-updates">
-                Check for Updates
+        <div class="teletext-section-content">
+          <div class="teletext-about-info">
+            <div class="teletext-setting-item">
+              <div class="teletext-setting-info">
+                <label class="teletext-setting-label">SFEEDO DESKTOP FEED READER</label>
+                <p class="teletext-setting-description">VERSION 0.1.0</p>
+                <p class="teletext-setting-description">RSS/ATOM FEED AGGREGATOR BUILT WITH TAURI AND RUST</p>
+              </div>
+            </div>
+            <div class="teletext-about-actions">
+              <button class="teletext-btn" data-action="check-updates">
+                CHECK UPDATES
               </button>
-              <button class="btn btn-outline" data-action="view-logs">
-                View Logs
+              <button class="teletext-btn" data-action="view-logs">
+                VIEW LOGS
               </button>
             </div>
           </div>
@@ -339,7 +303,7 @@ class SettingsManager {
       // Save configuration to backend
       await this.saveConfiguration();
 
-      window.AppNavigation.updateStatus(`Setting updated: ${settingPath}`);
+      window.AppNavigation.updateStatus(`SETTING UPDATED: ${settingPath.toUpperCase()}`);
 
       // Dispatch settings change event
       this.dispatchSettingsChangeEvent(settingPath, value, oldValue);
@@ -349,14 +313,14 @@ class SettingsManager {
       current[finalKey] = oldValue;
       element.checked = oldValue; // For checkboxes
       element.value = oldValue; // For other inputs
-      window.AppNavigation.updateStatus('Failed to save setting');
+      window.AppNavigation.updateStatus('FAILED TO SAVE SETTING');
     }
   }
 
   // Update auto-refresh dependent controls
   updateAutoRefreshDependents() {
     const intervalSelect = this.container.querySelector('[data-setting="auto_refresh.interval_minutes"]');
-    const intervalItem = intervalSelect?.closest('.setting-item');
+    const intervalItem = intervalSelect?.closest('.teletext-setting-item');
 
     if (intervalSelect && intervalItem) {
       intervalSelect.disabled = !this.config.auto_refresh.enabled;
@@ -367,9 +331,6 @@ class SettingsManager {
   // Handle action buttons
   async handleAction(action, element) {
     switch (action) {
-      case 'add-source':
-        this.showAddSourceDialog();
-        break;
       case 'edit-source':
         this.showEditSourceDialog(element.dataset.sourceId);
         break;
@@ -388,11 +349,7 @@ class SettingsManager {
     }
   }
 
-  // Show add source dialog
-  showAddSourceDialog() {
-    const dialog = this.createSourceDialog();
-    document.body.appendChild(dialog);
-  }
+  // Add source functionality removed - sources are built-in
 
   // Show edit source dialog
   showEditSourceDialog(sourceId) {
@@ -403,9 +360,13 @@ class SettingsManager {
     }
   }
 
-  // Create source dialog
-  createSourceDialog(source = null) {
-    const isEdit = !!source;
+  // Create source dialog (edit only)
+  createSourceDialog(source) {
+    if (!source) {
+      console.error('createSourceDialog called without source - add functionality removed');
+      return;
+    }
+    
     const dialog = document.createElement('div');
     dialog.className = 'source-dialog';
 
@@ -413,7 +374,7 @@ class SettingsManager {
       <div class="dialog-overlay">
         <div class="dialog-content">
           <div class="dialog-header">
-            <h3>${isEdit ? 'Edit' : 'Add'} Feed Source</h3>
+            <h3>Edit Feed Source</h3>
             <button class="dialog-close">&times;</button>
           </div>
           <div class="dialog-body">
@@ -438,7 +399,7 @@ class SettingsManager {
           </div>
           <div class="dialog-footer">
             <button class="btn btn-outline dialog-cancel">Cancel</button>
-            <button class="btn btn-primary dialog-save">${isEdit ? 'Update' : 'Add'} Source</button>
+            <button class="btn btn-primary dialog-save">Update Source</button>
           </div>
         </div>
       </div>
@@ -475,17 +436,13 @@ class SettingsManager {
           saveBtn.disabled = true;
           saveBtn.textContent = 'Saving...';
 
-          if (isEdit) {
-            await this.updateSource(source.id, sourceData);
-          } else {
-            await this.addSource(sourceData);
-          }
+          await this.updateSource(source.id, sourceData);
 
           closeDialog();
         } catch (error) {
           // Error is already handled in add/update methods
           saveBtn.disabled = false;
-          saveBtn.textContent = isEdit ? 'Update Source' : 'Add Source';
+          saveBtn.textContent = 'Update Source';
         }
       } else {
         form.reportValidity();
@@ -495,24 +452,7 @@ class SettingsManager {
     return dialog;
   }
 
-  // Add new source
-  async addSource(sourceData) {
-    try {
-      const newSource = await TauriAPI.feedSources.addFeedSource(
-        sourceData.name,
-        sourceData.url,
-        sourceData.enabled
-      );
-
-      this.feedSources.push(newSource);
-      this.renderSettings();
-      window.AppNavigation.updateStatus(`Added feed source: ${sourceData.name}`);
-    } catch (error) {
-      console.error('Failed to add feed source:', error);
-      window.AppNavigation.updateStatus('Failed to add feed source');
-      throw error;
-    }
-  }
+  // Add source functionality removed - sources are built-in
 
   // Update existing source
   async updateSource(sourceId, sourceData) {

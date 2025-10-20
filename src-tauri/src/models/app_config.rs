@@ -6,6 +6,17 @@ use std::collections::HashMap;
 pub struct AppConfig {
     pub auto_refresh: AutoRefreshConfig,
     pub ui: UiConfig,
+    pub feed_sources: Vec<FeedSourceConfig>,
+}
+
+/// Feed source configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FeedSourceConfig {
+    pub id: String,
+    pub name: String,
+    pub enabled: bool,
+    pub url: String,
+    pub last_fetched: Option<String>,
 }
 
 /// Auto-refresh configuration
@@ -18,18 +29,7 @@ pub struct AutoRefreshConfig {
 /// UI configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UiConfig {
-    pub theme: Theme,
-    pub articles_per_page: u32,
     pub show_notifications: bool,
-}
-
-/// Theme options
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Theme {
-    Light,
-    Dark,
-    System,
 }
 
 impl Default for AppConfig {
@@ -40,10 +40,59 @@ impl Default for AppConfig {
                 interval_minutes: 5,
             },
             ui: UiConfig {
-                theme: Theme::System,
-                articles_per_page: 50,
                 show_notifications: true,
             },
+            feed_sources: vec![
+                FeedSourceConfig {
+                    id: "yahoo".to_string(),
+                    name: "Yahoo Finance".to_string(),
+                    enabled: true,
+                    url: "Built-in scraper".to_string(),
+                    last_fetched: None,
+                },
+                FeedSourceConfig {
+                    id: "cnbc".to_string(),
+                    name: "CNBC Business".to_string(),
+                    enabled: true,
+                    url: "Built-in scraper".to_string(),
+                    last_fetched: None,
+                },
+                FeedSourceConfig {
+                    id: "marketwatch".to_string(),
+                    name: "MarketWatch".to_string(),
+                    enabled: true,
+                    url: "Built-in scraper".to_string(),
+                    last_fetched: None,
+                },
+                FeedSourceConfig {
+                    id: "seeking_alpha".to_string(),
+                    name: "Seeking Alpha".to_string(),
+                    enabled: true,
+                    url: "Built-in scraper".to_string(),
+                    last_fetched: None,
+                },
+                FeedSourceConfig {
+                    id: "wsj".to_string(),
+                    name: "Wall Street Journal".to_string(),
+                    enabled: true,
+                    url: "Built-in scraper".to_string(),
+                    last_fetched: None,
+                },
+                FeedSourceConfig {
+                    id: "nasdaq".to_string(),
+                    name: "NASDAQ".to_string(),
+                    enabled: true,
+                    url: "Built-in scraper".to_string(),
+                    last_fetched: None,
+                },
+                FeedSourceConfig {
+                    id: "cnn".to_string(),
+                    name: "CNN Finance".to_string(),
+                    enabled: true,
+                    url: "Built-in scraper".to_string(),
+                    last_fetched: None,
+                },
+            ],
         }
     }
 }
@@ -66,14 +115,7 @@ impl AppConfig {
             return Err("Auto-refresh interval cannot exceed 24 hours".to_string());
         }
 
-        // Validate articles per page (1 to 200)
-        if self.ui.articles_per_page < 1 {
-            return Err("Articles per page must be at least 1".to_string());
-        }
-
-        if self.ui.articles_per_page > 200 {
-            return Err("Articles per page cannot exceed 200".to_string());
-        }
+        // No additional UI validation needed for teletext interface
 
         Ok(())
     }
@@ -89,14 +131,6 @@ impl AppConfig {
         map.insert(
             "auto_refresh.interval_minutes".to_string(),
             self.auto_refresh.interval_minutes.to_string(),
-        );
-        map.insert(
-            "ui.theme".to_string(),
-            serde_json::to_string(&self.ui.theme).unwrap_or_default(),
-        );
-        map.insert(
-            "ui.articles_per_page".to_string(),
-            self.ui.articles_per_page.to_string(),
         );
         map.insert(
             "ui.show_notifications".to_string(),
@@ -124,17 +158,6 @@ impl AppConfig {
         }
 
         // Parse UI settings
-        if let Some(theme_str) = map.get("ui.theme") {
-            config.ui.theme =
-                serde_json::from_str(theme_str).map_err(|_| "Invalid ui.theme value")?;
-        }
-
-        if let Some(articles_str) = map.get("ui.articles_per_page") {
-            config.ui.articles_per_page = articles_str
-                .parse()
-                .map_err(|_| "Invalid ui.articles_per_page value")?;
-        }
-
         if let Some(notifications_str) = map.get("ui.show_notifications") {
             config.ui.show_notifications = notifications_str
                 .parse()

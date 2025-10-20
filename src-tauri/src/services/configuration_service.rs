@@ -61,10 +61,4 @@ impl ConfigurationService {
         log::info!("Configuration synchronized");
         Ok(())
     }
-
-    /// Initialize default feed sources (no longer needed - using built-in sources)
-    pub fn initialize_default_feed_sources(&self) -> Result<(), String> {
-        log::info!("Using built-in financial news sources - no initialization needed");
-        Ok(())
-    }
 }

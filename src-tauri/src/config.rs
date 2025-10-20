@@ -177,13 +177,11 @@ mod tests {
 
         let mut config = AppConfig::default();
         config.auto_refresh.interval_minutes = 60;
-        config.ui.articles_per_page = 25;
 
         config_manager.save_config(&config).unwrap();
         let loaded_config = config_manager.load_config().unwrap();
 
         assert_eq!(loaded_config.auto_refresh.interval_minutes, 60);
-        assert_eq!(loaded_config.ui.articles_per_page, 25);
     }
 
     #[test]

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SFEEDO TELETEXT DEMO</title>
+    <link rel="stylesheet" href="src/styles/main.css">
+</head>
+
+<body>
+    <div id="app">
+        <!-- Teletext Header -->
+        <header class="teletext-header">
+            <div class="teletext-title-bar">
+                <span class="teletext-logo">SFEEDO</span>
+                <span class="teletext-page-info">P100</span>
+            </div>
+            <div class="teletext-nav">
+                <button class="teletext-nav-btn active" data-view="articles">
+                    100 NEWS
+                </button>
+                <button class="teletext-nav-btn" data-view="settings">
+                    200 SETUP
+                </button>
+                <button id="refresh-btn" class="teletext-refresh-btn">
+                    REFRESH
+                </button>
+            </div>
+        </header>
+
+        <!-- Main teletext content -->
+        <main class="teletext-main">
+            <!-- Articles view -->
+            <div id="articles-view" class="teletext-view active">
+                <div class="teletext-view-header">
+                    <div class="teletext-header-line">
+                        <span class="teletext-section-title">FINANCIAL NEWS</span>
+                        <div class="teletext-sort-controls">
+                            <button id="sort-up-btn" class="teletext-sort-btn active" data-sort="newest">▲</button>
+                            <button id="sort-down-btn" class="teletext-sort-btn" data-sort="oldest">▼</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="articles-container" class="teletext-articles">
+                    <!-- Sample articles -->
+                    <article class="teletext-article" data-article-id="1" tabindex="0">
+                        <div class="teletext-article-header">
+                            <span class="teletext-article-source">REUTERS</span>
+                            <span class="teletext-article-time">2H</span>
+                        </div>
+                        <div class="teletext-article-title">STOCK MARKET REACHES NEW HIGHS AMID TECH RALLY</div>
+                        <div class="teletext-article-content">MAJOR INDICES SURGE AS TECHNOLOGY STOCKS LEAD GAINS.
+                            INVESTORS SHOW RENEWED CONFIDENCE IN GROWTH PROSPECTS.</div>
+                    </article>
+
+                    <article class="teletext-article" data-article-id="2" tabindex="0">
+                        <div class="teletext-article-header">
+                            <span class="teletext-article-source">BLOOMBERG</span>
+                            <span class="teletext-article-time">4H</span>
+                        </div>
+                        <div class="teletext-article-title">FEDERAL RESERVE SIGNALS POTENTIAL RATE CHANGES</div>
+                        <div class="teletext-article-content">CENTRAL BANK OFFICIALS HINT AT POLICY ADJUSTMENTS. MARKETS
+                            REACT TO INFLATION DATA AND EMPLOYMENT FIGURES.</div>
+                    </article>
+
+                    <article class="teletext-article" data-article-id="3" tabindex="0">
+                        <div class="teletext-article-header">
+                            <span class="teletext-article-source">CNBC</span>
+                            <span class="teletext-article-time">6H</span>
+                        </div>
+                        <div class="teletext-article-title">CRYPTOCURRENCY MARKET SHOWS VOLATILITY</div>
+                        <div class="teletext-article-content">BITCOIN AND ETHEREUM EXPERIENCE SIGNIFICANT PRICE SWINGS.
+                            REGULATORY CONCERNS CONTINUE TO IMPACT TRADING.</div>
+                    </article>
+
+                    <article class="teletext-article" data-article-id="4" tabindex="0">
+                        <div class="teletext-article-header">
+                            <span class="teletext-article-source">WSJ</span>
+                            <span class="teletext-article-time">8H</span>
+                        </div>
+                        <div class="teletext-article-title">ENERGY SECTOR FACES NEW CHALLENGES</div>
+                        <div class="teletext-article-content">OIL PRICES FLUCTUATE AS GEOPOLITICAL TENSIONS RISE.
+                            RENEWABLE ENERGY INVESTMENTS CONTINUE TO GROW.</div>
+                    </article>
+                </div>
+            </div>
+
+            <!-- Settings view -->
+            <div id="settings-view" class="teletext-view">
+                <div class="teletext-view-header">
+                    <span class="teletext-section-title">SYSTEM SETUP</span>
+                </div>
+                <div class="settings-container">
+                    <div class="teletext-settings-sections">
+                        <div class="teletext-settings-section">
+                            <div class="teletext-section-header">
+                                <h3 class="teletext-section-title">AUTO-REFRESH SETTINGS</h3>
+                            </div>
+                            <div class="teletext-section-content">
+                                <div class="teletext-setting-item">
+                                    <div class="teletext-setting-info">
+                                        <label class="teletext-setting-label">ENABLE AUTO-REFRESH</label>
+                                        <p class="teletext-setting-description">AUTOMATICALLY REFRESH FEEDS AT REGULAR
+                                            INTERVALS</p>
+                                    </div>
+                                    <div class="teletext-setting-control">
+                                        <label class="teletext-toggle-switch">
+                                            <input type="checkbox" checked>
+                                            <span class="teletext-toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="teletext-setting-item">
+                                    <div class="teletext-setting-info">
+                                        <label class="teletext-setting-label">REFRESH INTERVAL</label>
+                                        <p class="teletext-setting-description">HOW OFTEN TO CHECK FOR NEW ARTICLES</p>
+                                    </div>
+                                    <div class="teletext-setting-control">
+                                        <select class="teletext-setting-select">
+                                            <option>5 MINUTES</option>
+                                            <option selected>15 MINUTES</option>
+                                            <option>30 MINUTES</option>
+                                            <option>1 HOUR</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Status bar -->
+        <footer class="teletext-status">
+            <div class="teletext-status-content">
+                <span id="status-text" class="teletext-status-text">NEWS MODE</span>
+                <div class="teletext-status-indicators">
+                    <span id="auto-refresh-indicator" class="teletext-indicator">AUTO: ON (15M)</span>
+                    <span id="last-update" class="teletext-last-update">LAST: 14:32</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Simple demo functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            const navButtons = document.querySelectorAll('.teletext-nav-btn');
+            const views = document.querySelectorAll('.teletext-view');
+            const pageInfo = document.querySelector('.teletext-page-info');
+            const statusText = document.getElementById('status-text');
+            const sortButtons = document.querySelectorAll('.teletext-sort-btn');
+            const articles = document.querySelectorAll('.teletext-article');
+
+            // Navigation
+            navButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const targetView = e.currentTarget.dataset.view;
+
+                    // Update navigation buttons
+                    navButtons.forEach(btn => {
+                        btn.classList.toggle('active', btn.dataset.view === targetView);
+                    });
+
+                    // Update views
+                    views.forEach(view => {
+                        view.classList.toggle('active', view.id === `${targetView}-view`);
+                    });
+
+                    // Update page info and status
+                    pageInfo.textContent = targetView === 'articles' ? 'P100' : 'P200';
+                    statusText.textContent = targetView === 'articles' ? 'NEWS MODE' : 'SETUP MODE';
+                });
+            });
+
+            // Sort buttons
+            sortButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const sortType = e.currentTarget.dataset.sort;
+                    console.log('Demo sort clicked:', sortType);
+                    
+                    sortButtons.forEach(btn => btn.classList.remove('active'));
+                    e.currentTarget.classList.add('active');
+                    
+                    // Actually sort the demo articles
+                    sortDemoArticles(sortType);
+                });
+            });
+            
+            function sortDemoArticles(sortType) {
+                const container = document.getElementById('articles-container');
+                const articles = Array.from(container.querySelectorAll('.teletext-article'));
+                
+                console.log('Sorting demo articles:', sortType);
+                
+                // Simple demo sorting by time (assuming newer articles have lower time values)
+                articles.sort((a, b) => {
+                    const timeA = a.querySelector('.teletext-article-time').textContent;
+                    const timeB = b.querySelector('.teletext-article-time').textContent;
+                    
+                    // Convert time strings to numbers for sorting (2H -> 2, 4H -> 4, etc.)
+                    const numA = parseInt(timeA);
+                    const numB = parseInt(timeB);
+                    
+                    if (sortType === 'newest') {
+                        return numA - numB; // Lower numbers (newer) first
+                    } else {
+                        return numB - numA; // Higher numbers (older) first
+                    }
+                });
+                
+                // Clear container and re-add sorted articles
+                container.innerHTML = '';
+                articles.forEach(article => container.appendChild(article));
+                
+                console.log('Demo articles sorted');
+            }
+
+            // Article interactions
+            articles.forEach(article => {
+                article.addEventListener('click', (e) => {
+                    showModal(article);
+                });
+
+                article.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        showModal(article);
+                    }
+                });
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.key === '1') {
+                    e.preventDefault();
+                    document.querySelector('[data-view="articles"]').click();
+                } else if (e.key === '2') {
+                    e.preventDefault();
+                    document.querySelector('[data-view="settings"]').click();
+                }
+            });
+
+            function showModal(article) {
+                const title = article.querySelector('.teletext-article-title').textContent;
+                const content = article.querySelector('.teletext-article-content').textContent;
+                const source = article.querySelector('.teletext-article-source').textContent;
+                const time = article.querySelector('.teletext-article-time').textContent;
+
+                const modal = document.createElement('div');
+                modal.className = 'teletext-modal';
+                modal.innerHTML = `
+                    <div class="teletext-modal-overlay">
+                        <div class="teletext-modal-content">
+                            <div class="teletext-modal-header">
+                                <div class="teletext-modal-meta">
+                                    <span class="teletext-modal-source">${source}</span>
+                                    <span class="teletext-modal-time">${time}</span>
+                                </div>
+                                <button class="teletext-modal-close">X</button>
+                            </div>
+                            <div class="teletext-modal-body">
+                                <h2 class="teletext-modal-title">${title}</h2>
+                                <div class="teletext-modal-article-content">
+                                    <p class="teletext-modal-summary">${content}</p>
+                                    <div class="teletext-modal-full-content">
+                                        FULL CONTENT NOT AVAILABLE. CLICK "OPEN EXTERNAL LINK" TO VIEW ON SOURCE WEBSITE.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="teletext-modal-footer">
+                                <button class="teletext-btn teletext-btn-primary" onclick="openExternalLink('https://example.com')">
+                                    OPEN EXTERNAL LINK
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.body.appendChild(modal);
+
+                const closeBtn = modal.querySelector('.teletext-modal-close');
+                const overlay = modal.querySelector('.teletext-modal-overlay');
+
+                const closeModal = () => {
+                    document.body.removeChild(modal);
+                };
+
+                closeBtn.addEventListener('click', closeModal);
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) closeModal();
+                });
+
+                document.addEventListener('keydown', function handleEscape(e) {
+                    if (e.key === 'Escape') {
+                        closeModal();
+                        document.removeEventListener('keydown', handleEscape);
+                    }
+                });
+            }
+            
+            // External link function for demo
+            window.openExternalLink = function(url) {
+                try {
+                    const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
+                    if (!newWindow) {
+                        alert('Popup blocked. Please allow popups or copy this URL: ' + url);
+                    }
+                } catch (error) {
+                    console.error('Failed to open URL:', error);
+                    prompt('Copy this URL:', url);
+                }
+            };
+        });
+    </script>
+</body>
+
+</html>

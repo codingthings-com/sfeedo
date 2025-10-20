@@ -308,18 +308,47 @@ export class UtilityAPI {
    */
   static async openExternalUrl(url) {
     try {
-      // Try to use Tauri's shell API if available
-      if (window.__TAURI__) {
-        const { shell } = window.__TAURI__;
-        await shell.open(url);
-      } else {
-        // Fallback to window.open for development
-        window.open(url, '_blank');
+      // Validate URL first
+      if (!url || typeof url !== 'string') {
+        throw new Error('Invalid URL provided');
+      }
+      
+      // Ensure URL has protocol
+      let validUrl = url;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        validUrl = 'https://' + url;
+      }
+      
+      // Open in new tab/window
+      const newWindow = window.open(validUrl, '_blank', 'noopener,noreferrer');
+      
+      // Check if popup was blocked
+      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+        // Popup was likely blocked, show user the URL
+        const userWantsToOpen = confirm(`Popup blocked. Open this URL manually?\n\n${validUrl}`);
+        if (userWantsToOpen) {
+          // Try to copy to clipboard if possible
+          try {
+            await navigator.clipboard.writeText(validUrl);
+            alert('URL copied to clipboard!');
+          } catch (clipboardError) {
+            // Show URL for manual copying
+            prompt('Copy this URL:', validUrl);
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to open external URL:', error);
-      // Fallback to window.open
-      window.open(url, '_blank');
+      // Show URL to user as fallback
+      const userWantsToOpen = confirm(`Could not open URL automatically. Open manually?\n\n${url}`);
+      if (userWantsToOpen) {
+        try {
+          await navigator.clipboard.writeText(url);
+          alert('URL copied to clipboard!');
+        } catch (clipboardError) {
+          prompt('Copy this URL:', url);
+        }
+      }
     }
   }
 }

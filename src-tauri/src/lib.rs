@@ -18,7 +18,6 @@ pub fn run() {
             backup_configuration,
             get_config_directory,
             sync_configuration,
-            initialize_default_feed_sources,
             refresh_feeds,
             get_articles,
             get_refresh_status,
@@ -45,14 +44,6 @@ pub fn run() {
                 log::error!("Failed to initialize configuration service: {}", e);
                 e
             })?;
-
-            // Initialize default feed sources if none exist
-            config_service
-                .initialize_default_feed_sources()
-                .map_err(|e| {
-                    log::error!("Failed to initialize default feed sources: {}", e);
-                    e
-                })?;
 
             Ok(())
         })
