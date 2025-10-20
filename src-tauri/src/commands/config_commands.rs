@@ -50,6 +50,13 @@ pub async fn get_config_directory(app_handle: AppHandle) -> Result<String, Strin
 }
 
 #[tauri::command]
+pub async fn get_config_file_path(app_handle: AppHandle) -> Result<String, String> {
+    use crate::config::ConfigManager;
+    let config_manager = ConfigManager::new(&app_handle)?;
+    Ok(config_manager.get_config_file().to_string_lossy().to_string())
+}
+
+#[tauri::command]
 pub async fn sync_configuration(app_handle: AppHandle) -> Result<(), String> {
     let service = ConfigurationService::new(&app_handle)?;
     service.sync_configuration()

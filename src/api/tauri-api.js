@@ -257,6 +257,19 @@ export class ConfigAPI {
       throw new Error(`Failed to delete config file: ${error}`);
     }
   }
+
+  /**
+   * Get the actual config file path being used
+   * @returns {Promise<string>} Config file path
+   */
+  static async getConfigFilePath() {
+    try {
+      return await invoke('get_config_file_path');
+    } catch (error) {
+      console.error('Failed to get config file path:', error);
+      throw new Error(`Failed to get config file path: ${error}`);
+    }
+  }
 }
 
 /**
