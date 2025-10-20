@@ -1,7 +1,7 @@
 {
   "productName": "sfeedo",
   "version": "0.1.0",
-  "identifier": "com.sfeedo.app",
+  "identifier": "com.codingthings.sfeedo",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -12,12 +12,14 @@
     "windows": [
       {
         "title": "sfeedo",
-        "width": 600,
+        "width": 400,
         "height": 1000,
         "minWidth": 300,
-        "minHeight": 500,
+        "minHeight": 700,
         "resizable": true,
-        "center": true
+        "center": false,
+        "x": -450,
+        "y": 0
       }
     ]
   }
