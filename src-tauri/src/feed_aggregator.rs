@@ -1,7 +1,7 @@
 use crate::models::Article;
-use tokio::time::{Duration, Instant};
-use finance_news_aggregator_rs::{NewsClient, NewsArticle as ExternalNewsArticle};
 use chrono::{DateTime, Utc};
+use finance_news_aggregator_rs::{NewsArticle as ExternalNewsArticle, NewsClient};
+use tokio::time::{Duration, Instant};
 
 /// Available financial news sources
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -23,59 +23,57 @@ impl FeedAggregator {
     pub fn new() -> Self {
         let news_client = NewsClient::new();
 
-        Self {
-            news_client,
-        }
+        Self { news_client }
     }
 
     /// Get all available news sources
     pub fn get_available_sources() -> Vec<NewsSource> {
         vec![
-            NewsSource { 
-                id: "yahoo".to_string(), 
-                name: "Yahoo Finance".to_string(), 
+            NewsSource {
+                id: "yahoo".to_string(),
+                name: "Yahoo Finance".to_string(),
                 enabled: true,
                 url: "Built-in scraper".to_string(),
                 last_fetched: None,
             },
-            NewsSource { 
-                id: "cnbc".to_string(), 
-                name: "CNBC Business".to_string(), 
+            NewsSource {
+                id: "cnbc".to_string(),
+                name: "CNBC Business".to_string(),
                 enabled: true,
                 url: "Built-in scraper".to_string(),
                 last_fetched: None,
             },
-            NewsSource { 
-                id: "marketwatch".to_string(), 
-                name: "MarketWatch".to_string(), 
+            NewsSource {
+                id: "marketwatch".to_string(),
+                name: "MarketWatch".to_string(),
                 enabled: true,
                 url: "Built-in scraper".to_string(),
                 last_fetched: None,
             },
-            NewsSource { 
-                id: "seeking_alpha".to_string(), 
-                name: "Seeking Alpha".to_string(), 
+            NewsSource {
+                id: "seeking_alpha".to_string(),
+                name: "Seeking Alpha".to_string(),
                 enabled: true,
                 url: "Built-in scraper".to_string(),
                 last_fetched: None,
             },
-            NewsSource { 
-                id: "wsj".to_string(), 
-                name: "Wall Street Journal".to_string(), 
+            NewsSource {
+                id: "wsj".to_string(),
+                name: "Wall Street Journal".to_string(),
                 enabled: true,
                 url: "Built-in scraper".to_string(),
                 last_fetched: None,
             },
-            NewsSource { 
-                id: "nasdaq".to_string(), 
-                name: "NASDAQ".to_string(), 
+            NewsSource {
+                id: "nasdaq".to_string(),
+                name: "NASDAQ".to_string(),
                 enabled: true,
                 url: "Built-in scraper".to_string(),
                 last_fetched: None,
             },
-            NewsSource { 
-                id: "cnn".to_string(), 
-                name: "CNN Finance".to_string(), 
+            NewsSource {
+                id: "cnn".to_string(),
+                name: "CNN Finance".to_string(),
                 enabled: true,
                 url: "Built-in scraper".to_string(),
                 last_fetched: None,
@@ -96,11 +94,23 @@ impl FeedAggregator {
         log::info!("Starting fetch from {} news sources", enabled_sources.len());
 
         for (index, source) in enabled_sources.iter().enumerate() {
-            log::debug!("Processing source {}/{}: {}", index + 1, enabled_sources.len(), source.name);
+            log::debug!(
+                "Processing source {}/{}: {}",
+                index + 1,
+                enabled_sources.len(),
+                source.name
+            );
 
-            match self.fetch_from_single_source(&source.id, &source.name).await {
+            match self
+                .fetch_from_single_source(&source.id, &source.name)
+                .await
+            {
                 Ok(articles) => {
-                    log::info!("Successfully fetched {} articles from {}", articles.len(), source.name);
+                    log::info!(
+                        "Successfully fetched {} articles from {}",
+                        articles.len(),
+                        source.name
+                    );
                     all_articles.extend(articles);
                     successful_sources.push(source.id.clone());
                 }
@@ -121,10 +131,13 @@ impl FeedAggregator {
         }
 
         let duration = start_time.elapsed();
-        
+
         log::info!(
             "Fetch completed in {:?}. Success: {}, Failed: {}, Total articles: {}",
-            duration, successful_sources.len(), failed_sources.len(), all_articles.len()
+            duration,
+            successful_sources.len(),
+            failed_sources.len(),
+            all_articles.len()
         );
 
         Ok(FetchResult {
@@ -136,46 +149,69 @@ impl FeedAggregator {
     }
 
     /// Fetch articles from a single news source using the built-in aggregator functions
-    async fn fetch_from_single_source(&mut self, source_id: &str, source_name: &str) -> Result<Vec<Article>, FeedError> {
+    async fn fetch_from_single_source(
+        &mut self,
+        source_id: &str,
+        source_name: &str,
+    ) -> Result<Vec<Article>, FeedError> {
         log::info!("Fetching articles from source: {}", source_name);
 
         let news_articles = match source_id {
-            "yahoo" => {
-                self.news_client.yahoo_finance().market_summary().await
-                    .map_err(|e| FeedError::NetworkError(format!("Yahoo Finance error: {}", e)))?
-            }
-            "cnbc" => {
-                self.news_client.cnbc().business().await
-                    .map_err(|e| FeedError::NetworkError(format!("CNBC error: {}", e)))?
-            }
-            "marketwatch" => {
-                self.news_client.market_watch().market_pulse().await
-                    .map_err(|e| FeedError::NetworkError(format!("MarketWatch error: {}", e)))?
-            }
-            "seeking_alpha" => {
-                self.news_client.seeking_alpha().latest_articles().await
-                    .map_err(|e| FeedError::NetworkError(format!("Seeking Alpha error: {}", e)))?
-            }
-            "wsj" => {
-                self.news_client.wsj().market_news().await
-                    .map_err(|e| FeedError::NetworkError(format!("WSJ error: {}", e)))?
-            }
-            "nasdaq" => {
-                self.news_client.nasdaq().stocks().await
-                    .map_err(|e| FeedError::NetworkError(format!("NASDAQ error: {}", e)))?
-            }
-            "cnn" => {
-                self.news_client.cnn_finance().markets().await
-                    .map_err(|e| FeedError::NetworkError(format!("CNN Finance error: {}", e)))?
-            }
+            "yahoo" => self
+                .news_client
+                .yahoo_finance()
+                .headlines()
+                .await
+                .map_err(|e| FeedError::NetworkError(format!("Yahoo Finance error: {}", e)))?,
+            "cnbc" => self
+                .news_client
+                .cnbc()
+                .business()
+                .await
+                .map_err(|e| FeedError::NetworkError(format!("CNBC error: {}", e)))?,
+            "marketwatch" => self
+                .news_client
+                .market_watch()
+                .market_pulse()
+                .await
+                .map_err(|e| FeedError::NetworkError(format!("MarketWatch error: {}", e)))?,
+            "seeking_alpha" => self
+                .news_client
+                .seeking_alpha()
+                .latest_articles()
+                .await
+                .map_err(|e| FeedError::NetworkError(format!("Seeking Alpha error: {}", e)))?,
+            "wsj" => self
+                .news_client
+                .wsj()
+                .market_news()
+                .await
+                .map_err(|e| FeedError::NetworkError(format!("WSJ error: {}", e)))?,
+            "nasdaq" => self
+                .news_client
+                .nasdaq()
+                .stocks()
+                .await
+                .map_err(|e| FeedError::NetworkError(format!("NASDAQ error: {}", e)))?,
+            "cnn" => self
+                .news_client
+                .cnn_finance()
+                .markets()
+                .await
+                .map_err(|e| FeedError::NetworkError(format!("CNN Finance error: {}", e)))?,
             _ => {
-                return Err(FeedError::ConfigurationError(
-                    format!("Unsupported news source: {}", source_id)
-                ));
+                return Err(FeedError::ConfigurationError(format!(
+                    "Unsupported news source: {}",
+                    source_id
+                )));
             }
         };
 
-        log::info!("Fetched {} articles from {}", news_articles.len(), source_name);
+        log::info!(
+            "Fetched {} articles from {}",
+            news_articles.len(),
+            source_name
+        );
 
         // Convert ExternalNewsArticle to our internal Article model
         let articles = news_articles
@@ -238,7 +274,11 @@ impl FeedAggregator {
     }
 
     /// Convert ExternalNewsArticle to our Article model (following feed.rs.example pattern)
-    fn convert_external_news_article_to_article(&self, news_article: ExternalNewsArticle, source_id: &str) -> Result<Article, FeedError> {
+    fn convert_external_news_article_to_article(
+        &self,
+        news_article: ExternalNewsArticle,
+        source_id: &str,
+    ) -> Result<Article, FeedError> {
         // Generate a unique ID for the article
         let article_id = self.generate_article_id_from_external(&news_article, source_id);
 
@@ -275,19 +315,24 @@ impl FeedAggregator {
         );
 
         // Validate the article before returning
-        article.validate()
+        article
+            .validate()
             .map_err(|e| FeedError::ParseError(format!("Invalid article data: {}", e)))?;
 
         Ok(article)
     }
 
     /// Generate a unique ID for an article from ExternalNewsArticle
-    fn generate_article_id_from_external(&self, news_article: &ExternalNewsArticle, source_id: &str) -> String {
+    fn generate_article_id_from_external(
+        &self,
+        news_article: &ExternalNewsArticle,
+        source_id: &str,
+    ) -> String {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
 
         let mut hasher = DefaultHasher::new();
-        
+
         // Hash the URL and title to create a unique ID
         if let Some(ref url) = news_article.link {
             url.hash(&mut hasher);
@@ -296,7 +341,7 @@ impl FeedAggregator {
             title.hash(&mut hasher);
         }
         source_id.hash(&mut hasher);
-        
+
         let hash = hasher.finish();
         format!("{}_{:x}", source_id, hash)
     }
@@ -311,8 +356,6 @@ pub struct FetchResult {
     pub duration: Duration,
 }
 
-
-
 /// Error information for a failed news source
 #[derive(Debug, Clone)]
 pub struct NewsSourceError {
@@ -326,14 +369,12 @@ pub struct NewsSourceError {
 pub enum FeedError {
     #[error("Network error: {0}")]
     NetworkError(String),
-    
+
     #[error("Parse error: {0}")]
     ParseError(String),
-    
+
     #[error("Configuration error: {0}")]
     ConfigurationError(String),
-    
-
 }
 
 impl FeedError {
@@ -341,7 +382,8 @@ impl FeedError {
     pub fn user_message(&self) -> String {
         match self {
             FeedError::NetworkError(_) => {
-                "Unable to connect to news sources. Please check your internet connection.".to_string()
+                "Unable to connect to news sources. Please check your internet connection."
+                    .to_string()
             }
             FeedError::ParseError(_) => {
                 "Error processing news feed. The source may be temporarily unavailable.".to_string()
@@ -349,7 +391,6 @@ impl FeedError {
             FeedError::ConfigurationError(_) => {
                 "Configuration error. Please check your settings.".to_string()
             }
-
         }
     }
 }

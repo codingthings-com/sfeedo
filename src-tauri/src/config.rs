@@ -83,8 +83,6 @@ impl ConfigManager {
         Ok(())
     }
 
-
-
     /// Get the configuration directory path
     pub fn get_config_dir(&self) -> &Path {
         &self.config_dir
@@ -104,9 +102,7 @@ impl ConfigManager {
     pub fn reset_to_defaults(&self) -> Result<(), String> {
         let default_config = AppConfig::default();
         self.save_config(&default_config)?;
-        
 
-        
         Ok(())
     }
 
@@ -117,7 +113,9 @@ impl ConfigManager {
         }
 
         let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S");
-        let backup_file = self.config_dir.join(format!("config_backup_{}.json", timestamp));
+        let backup_file = self
+            .config_dir
+            .join(format!("config_backup_{}.json", timestamp));
 
         fs::copy(&self.config_file, &backup_file)
             .map_err(|e| format!("Failed to backup config file: {}", e))?;
@@ -151,8 +149,8 @@ impl ConfigManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
     use std::fs;
+    use tempfile::TempDir;
 
     fn create_test_config_manager() -> (ConfigManager, TempDir) {
         let temp_dir = TempDir::new().unwrap();
@@ -166,7 +164,7 @@ mod tests {
     #[test]
     fn test_load_config_creates_default_when_missing() {
         let (config_manager, _temp_dir) = create_test_config_manager();
-        
+
         let config = config_manager.load_config().unwrap();
         assert_eq!(config.auto_refresh.enabled, true);
         assert_eq!(config.auto_refresh.interval_minutes, 30);
@@ -176,7 +174,7 @@ mod tests {
     #[test]
     fn test_save_and_load_config() {
         let (config_manager, _temp_dir) = create_test_config_manager();
-        
+
         let mut config = AppConfig::default();
         config.auto_refresh.interval_minutes = 60;
         config.ui.articles_per_page = 25;
@@ -191,7 +189,7 @@ mod tests {
     #[test]
     fn test_config_validation() {
         let (config_manager, _temp_dir) = create_test_config_manager();
-        
+
         let mut invalid_config = AppConfig::default();
         invalid_config.auto_refresh.interval_minutes = 2; // Too low
 
@@ -200,12 +198,10 @@ mod tests {
         assert!(result.unwrap_err().contains("at least 5 minutes"));
     }
 
-
-
     #[test]
     fn test_backup_and_restore() {
         let (config_manager, _temp_dir) = create_test_config_manager();
-        
+
         // Create and save a config
         let mut config = AppConfig::default();
         config.auto_refresh.interval_minutes = 120;

@@ -1,18 +1,28 @@
 use crate::feed_aggregator::FetchResult;
 use crate::services::ConfigurationService;
+use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use tokio::time::{interval, Instant};
 use tokio::sync::broadcast;
-use serde::{Deserialize, Serialize};
+use tokio::time::{interval, Instant};
 
 /// Status of a refresh operation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum RefreshStatus {
     Idle,
-    InProgress { started_at: String, sources_total: usize, sources_completed: usize },
-    Completed { duration_ms: u64, new_articles: usize, failed_sources: usize },
-    Failed { error: String },
+    InProgress {
+        started_at: String,
+        sources_total: usize,
+        sources_completed: usize,
+    },
+    Completed {
+        duration_ms: u64,
+        new_articles: usize,
+        failed_sources: usize,
+    },
+    Failed {
+        error: String,
+    },
 }
 
 /// Progress update during refresh
@@ -33,11 +43,9 @@ pub struct RefreshManager {
 
 impl RefreshManager {
     /// Create a new RefreshManager instance
-    pub fn new(
-        config_service: Arc<ConfigurationService>,
-    ) -> Self {
+    pub fn new(config_service: Arc<ConfigurationService>) -> Self {
         let (progress_sender, _) = broadcast::channel(100);
-        
+
         Self {
             config_service,
             status: Arc::new(Mutex::new(RefreshStatus::Idle)),
@@ -48,7 +56,9 @@ impl RefreshManager {
 
     /// Start the auto-refresh scheduler based on current configuration
     pub async fn start_auto_refresh(&self) -> Result<(), String> {
-        let config = self.config_service.get_app_config()
+        let config = self
+            .config_service
+            .get_app_config()
             .map_err(|e| format!("Failed to get app config: {}", e))?;
 
         if !config.auto_refresh.enabled {
@@ -64,7 +74,10 @@ impl RefreshManager {
             return Err("Auto-refresh interval must be at least 5 minutes".to_string());
         }
 
-        log::info!("Starting auto-refresh with interval: {} minutes", interval_minutes);
+        log::info!(
+            "Starting auto-refresh with interval: {} minutes",
+            interval_minutes
+        );
 
         let config_service = Arc::clone(&self.config_service);
         let status = Arc::clone(&self.status);
@@ -72,19 +85,19 @@ impl RefreshManager {
 
         let handle = tokio::spawn(async move {
             let mut refresh_interval = interval(Duration::from_secs(interval_minutes as u64 * 60));
-            
+
             loop {
                 refresh_interval.tick().await;
-                
+
                 log::info!("Auto-refresh triggered");
-                
+
                 // Check if auto-refresh is still enabled
                 if let Ok(current_config) = config_service.get_app_config() {
                     if !current_config.auto_refresh.enabled {
                         log::info!("Auto-refresh disabled, stopping scheduler");
                         break;
                     }
-                    
+
                     // Update interval if it changed
                     if current_config.auto_refresh.interval_minutes != interval_minutes {
                         log::info!("Auto-refresh interval changed, restarting scheduler");
@@ -141,7 +154,7 @@ impl RefreshManager {
         let started_at = chrono::Utc::now().to_rfc3339();
 
         use crate::feed_aggregator::FeedAggregator;
-        
+
         let sources = FeedAggregator::get_available_sources();
         let enabled_sources: Vec<_> = sources.iter().filter(|s| s.enabled).collect();
 
@@ -164,11 +177,11 @@ impl RefreshManager {
 
         // Create feed aggregator and perform refresh
         let mut aggregator = FeedAggregator::new();
-        
+
         let result = match aggregator.refresh_all_feeds().await {
             Ok(fetch_result) => {
                 let duration = start_time.elapsed();
-                
+
                 // Update status to completed
                 {
                     let mut status = self.status.lock().unwrap();
@@ -224,8 +237,12 @@ impl RefreshManager {
     }
 
     /// Get the next scheduled auto-refresh time (if enabled)
-    pub async fn get_next_refresh_time(&self) -> Result<Option<chrono::DateTime<chrono::Utc>>, String> {
-        let config = self.config_service.get_app_config()
+    pub async fn get_next_refresh_time(
+        &self,
+    ) -> Result<Option<chrono::DateTime<chrono::Utc>>, String> {
+        let config = self
+            .config_service
+            .get_app_config()
             .map_err(|e| format!("Failed to get app config: {}", e))?;
 
         if !config.auto_refresh.enabled || !self.is_auto_refresh_running() {
@@ -234,7 +251,8 @@ impl RefreshManager {
 
         // Calculate next refresh time based on interval
         let now = chrono::Utc::now();
-        let interval_duration = chrono::Duration::minutes(config.auto_refresh.interval_minutes as i64);
+        let interval_duration =
+            chrono::Duration::minutes(config.auto_refresh.interval_minutes as i64);
         let next_refresh = now + interval_duration;
 
         Ok(Some(next_refresh))
@@ -258,7 +276,12 @@ impl RefreshManager {
         // Update the in-progress status
         {
             let mut status = self.status.lock().unwrap();
-            if let RefreshStatus::InProgress { started_at, sources_total, .. } = &*status {
+            if let RefreshStatus::InProgress {
+                started_at,
+                sources_total,
+                ..
+            } = &*status
+            {
                 *status = RefreshStatus::InProgress {
                     started_at: started_at.clone(),
                     sources_total: *sources_total,
@@ -287,18 +310,33 @@ pub struct RefreshStats {
 impl RefreshManager {
     /// Get refresh statistics
     pub async fn get_refresh_stats(&self) -> Result<RefreshStats, String> {
-        let config = self.config_service.get_app_config()
+        let config = self
+            .config_service
+            .get_app_config()
             .map_err(|e| format!("Failed to get app config: {}", e))?;
 
-        let (last_refresh_time, last_refresh_duration_ms, last_refresh_new_articles, last_refresh_failed_sources) = 
-            match self.get_refresh_status() {
-                RefreshStatus::Completed { duration_ms, new_articles, failed_sources } => {
-                    (Some(chrono::Utc::now().to_rfc3339()), Some(duration_ms), Some(new_articles), Some(failed_sources))
-                }
-                _ => (None, None, None, None)
-            };
+        let (
+            last_refresh_time,
+            last_refresh_duration_ms,
+            last_refresh_new_articles,
+            last_refresh_failed_sources,
+        ) = match self.get_refresh_status() {
+            RefreshStatus::Completed {
+                duration_ms,
+                new_articles,
+                failed_sources,
+            } => (
+                Some(chrono::Utc::now().to_rfc3339()),
+                Some(duration_ms),
+                Some(new_articles),
+                Some(failed_sources),
+            ),
+            _ => (None, None, None, None),
+        };
 
-        let next_refresh_time = self.get_next_refresh_time().await?
+        let next_refresh_time = self
+            .get_next_refresh_time()
+            .await?
             .map(|dt| dt.to_rfc3339());
 
         Ok(RefreshStats {
@@ -333,7 +371,10 @@ mod tests {
         let serialized = serde_json::to_string(&progress).unwrap();
         let deserialized: RefreshProgress = serde_json::from_str(&serialized).unwrap();
 
-        assert!(matches!(deserialized.status, RefreshStatus::InProgress { .. }));
+        assert!(matches!(
+            deserialized.status,
+            RefreshStatus::InProgress { .. }
+        ));
         assert_eq!(deserialized.current_source, Some("Reuters".to_string()));
     }
 }

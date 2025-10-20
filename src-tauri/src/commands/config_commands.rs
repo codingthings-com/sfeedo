@@ -22,8 +22,6 @@ pub async fn reset_config_to_defaults(app_handle: AppHandle) -> Result<(), Strin
     service.reset_config_to_defaults()
 }
 
-
-
 #[tauri::command]
 pub async fn backup_configuration(app_handle: AppHandle) -> Result<String, String> {
     let service = ConfigurationService::new(&app_handle)?;

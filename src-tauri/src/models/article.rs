@@ -38,8 +38,6 @@ impl Article {
         }
     }
 
-
-
     /// Validate the article data
     pub fn validate(&self) -> Result<(), String> {
         if self.id.trim().is_empty() {
@@ -73,6 +71,4 @@ impl Article {
 
         Ok(())
     }
-
-
 }
