@@ -18,7 +18,6 @@ pub fn run() {
             backup_configuration,
             get_config_directory,
             sync_configuration,
-            initialize_default_feed_sources,
             refresh_feeds,
             get_articles,
             get_refresh_status,
@@ -29,7 +28,11 @@ pub fn run() {
             reset_config,
             export_config,
             get_config_info,
-            get_feed_sources
+            get_feed_sources,
+            update_feed_source_enabled,
+            delete_config_file,
+            get_config_file_path,
+            open_url_in_browser
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {
@@ -41,18 +44,10 @@ pub fn run() {
             }
 
             // Initialize configuration service and default feed sources
-            let config_service = ConfigurationService::new(&app.handle()).map_err(|e| {
+            let _config_service = ConfigurationService::new(&app.handle()).map_err(|e| {
                 log::error!("Failed to initialize configuration service: {}", e);
                 e
             })?;
-
-            // Initialize default feed sources if none exist
-            config_service
-                .initialize_default_feed_sources()
-                .map_err(|e| {
-                    log::error!("Failed to initialize default feed sources: {}", e);
-                    e
-                })?;
 
             Ok(())
         })

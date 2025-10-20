@@ -23,6 +23,21 @@ pub async fn reset_config_to_defaults(app_handle: AppHandle) -> Result<(), Strin
 }
 
 #[tauri::command]
+pub async fn delete_config_file(app_handle: AppHandle) -> Result<String, String> {
+    let service = ConfigurationService::new(&app_handle)?;
+    let config_dir = service.get_config_directory();
+    let config_file = std::path::Path::new(&config_dir).join("config.json");
+    
+    if config_file.exists() {
+        std::fs::remove_file(&config_file)
+            .map_err(|e| format!("Failed to delete config file: {}", e))?;
+        Ok(format!("Config file deleted: {}", config_file.display()))
+    } else {
+        Ok("Config file does not exist".to_string())
+    }
+}
+
+#[tauri::command]
 pub async fn backup_configuration(app_handle: AppHandle) -> Result<String, String> {
     let service = ConfigurationService::new(&app_handle)?;
     service.backup_configuration()
@@ -35,13 +50,14 @@ pub async fn get_config_directory(app_handle: AppHandle) -> Result<String, Strin
 }
 
 #[tauri::command]
-pub async fn sync_configuration(app_handle: AppHandle) -> Result<(), String> {
-    let service = ConfigurationService::new(&app_handle)?;
-    service.sync_configuration()
+pub async fn get_config_file_path(app_handle: AppHandle) -> Result<String, String> {
+    use crate::config::ConfigManager;
+    let config_manager = ConfigManager::new(&app_handle)?;
+    Ok(config_manager.get_config_file().to_string_lossy().to_string())
 }
 
 #[tauri::command]
-pub async fn initialize_default_feed_sources(app_handle: AppHandle) -> Result<(), String> {
+pub async fn sync_configuration(app_handle: AppHandle) -> Result<(), String> {
     let service = ConfigurationService::new(&app_handle)?;
-    service.initialize_default_feed_sources()
+    service.sync_configuration()
 }

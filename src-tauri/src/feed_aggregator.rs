@@ -26,72 +26,52 @@ impl FeedAggregator {
         Self { news_client }
     }
 
-    /// Get all available news sources
-    pub fn get_available_sources() -> Vec<NewsSource> {
-        vec![
-            NewsSource {
-                id: "yahoo".to_string(),
-                name: "Yahoo Finance".to_string(),
-                enabled: true,
-                url: "Built-in scraper".to_string(),
-                last_fetched: None,
-            },
-            NewsSource {
-                id: "cnbc".to_string(),
-                name: "CNBC Business".to_string(),
-                enabled: true,
-                url: "Built-in scraper".to_string(),
-                last_fetched: None,
-            },
-            NewsSource {
-                id: "marketwatch".to_string(),
-                name: "MarketWatch".to_string(),
-                enabled: true,
-                url: "Built-in scraper".to_string(),
-                last_fetched: None,
-            },
-            NewsSource {
-                id: "seeking_alpha".to_string(),
-                name: "Seeking Alpha".to_string(),
-                enabled: true,
-                url: "Built-in scraper".to_string(),
-                last_fetched: None,
-            },
-            NewsSource {
-                id: "wsj".to_string(),
-                name: "Wall Street Journal".to_string(),
-                enabled: true,
-                url: "Built-in scraper".to_string(),
-                last_fetched: None,
-            },
-            NewsSource {
-                id: "nasdaq".to_string(),
-                name: "NASDAQ".to_string(),
-                enabled: true,
-                url: "Built-in scraper".to_string(),
-                last_fetched: None,
-            },
-            NewsSource {
-                id: "cnn".to_string(),
-                name: "CNN Finance".to_string(),
-                enabled: true,
-                url: "Built-in scraper".to_string(),
-                last_fetched: None,
-            },
-        ]
+    /// Convert FeedSourceConfig to NewsSource
+    fn config_to_news_source(config: &crate::models::FeedSourceConfig) -> NewsSource {
+        NewsSource {
+            id: config.id.clone(),
+            name: config.name.clone(),
+            enabled: config.enabled,
+            url: config.url.clone(),
+            last_fetched: config.last_fetched.clone(),
+        }
     }
 
-    /// Fetch articles from all available news sources
-    pub async fn fetch_all_news(&mut self) -> Result<FetchResult, FeedError> {
+    /// Get all available news sources from configuration
+    pub fn get_available_sources_from_config(config: &crate::models::AppConfig) -> Vec<NewsSource> {
+        config.feed_sources.iter()
+            .map(Self::config_to_news_source)
+            .collect()
+    }
+
+    /// Get all available news sources (fallback for backward compatibility)
+    pub fn get_available_sources() -> Vec<NewsSource> {
+        // Return default sources for backward compatibility
+        let default_config = crate::models::AppConfig::default();
+        Self::get_available_sources_from_config(&default_config)
+    }
+
+    /// Fetch articles from all available news sources using configuration
+    pub async fn fetch_all_news_with_config(&mut self, config: &crate::models::AppConfig) -> Result<FetchResult, FeedError> {
         let mut all_articles = Vec::new();
         let mut successful_sources = Vec::new();
         let mut failed_sources = Vec::new();
         let start_time = Instant::now();
 
-        let sources = Self::get_available_sources();
+        let sources = Self::get_available_sources_from_config(config);
         let enabled_sources: Vec<_> = sources.iter().filter(|s| s.enabled).collect();
 
-        log::info!("Starting fetch from {} news sources", enabled_sources.len());
+        log::info!("Starting fetch from {} enabled news sources (out of {} total)", enabled_sources.len(), sources.len());
+
+        if enabled_sources.is_empty() {
+            log::warn!("No enabled news sources found");
+            return Ok(FetchResult {
+                articles: all_articles,
+                successful_sources,
+                failed_sources,
+                duration: start_time.elapsed(),
+            });
+        }
 
         for (index, source) in enabled_sources.iter().enumerate() {
             log::debug!(
@@ -223,6 +203,17 @@ impl FeedAggregator {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(articles)
+    }
+
+    /// Fetch articles from all available news sources (backward compatibility)
+    pub async fn fetch_all_news(&mut self) -> Result<FetchResult, FeedError> {
+        let default_config = crate::models::AppConfig::default();
+        self.fetch_all_news_with_config(&default_config).await
+    }
+
+    /// Refresh all feeds using configuration
+    pub async fn refresh_all_feeds_with_config(&mut self, config: &crate::models::AppConfig) -> Result<FetchResult, FeedError> {
+        self.fetch_all_news_with_config(config).await
     }
 
     /// Refresh all feeds (alias for fetch_all_news for backward compatibility)

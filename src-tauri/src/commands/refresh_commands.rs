@@ -32,13 +32,17 @@ pub struct SimpleRefreshStatus {
 /// Tauri commands for refresh and configuration management
 
 #[tauri::command]
-pub async fn refresh_feeds(_app_handle: AppHandle) -> Result<RefreshResponse, String> {
+pub async fn refresh_feeds(app_handle: AppHandle) -> Result<RefreshResponse, String> {
     let start_time = std::time::Instant::now();
+
+    // Get current configuration
+    let config_service = ConfigurationService::new(&app_handle)?;
+    let config = config_service.get_app_config()?;
 
     // Create feed aggregator and perform refresh
     let mut aggregator = FeedAggregator::new();
 
-    match aggregator.refresh_all_feeds().await {
+    match aggregator.refresh_all_feeds_with_config(&config).await {
         Ok(result) => {
             let duration = start_time.elapsed();
             Ok(RefreshResponse {
@@ -78,12 +82,16 @@ pub struct ArticlesResponse {
 #[tauri::command]
 pub async fn get_articles(
     params: GetArticlesParams,
-    _app_handle: AppHandle,
+    app_handle: AppHandle,
 ) -> Result<ArticlesResponse, String> {
+    // Get current configuration
+    let config_service = ConfigurationService::new(&app_handle)?;
+    let config = config_service.get_app_config()?;
+
     // Create feed aggregator and fetch fresh articles
     let mut aggregator = FeedAggregator::new();
 
-    match aggregator.refresh_all_feeds().await {
+    match aggregator.refresh_all_feeds_with_config(&config).await {
         Ok(result) => {
             log::info!("Fetched {} articles for frontend", result.articles.len());
 
@@ -135,10 +143,13 @@ pub async fn get_refresh_status(app_handle: AppHandle) -> Result<SimpleRefreshSt
 }
 
 #[tauri::command]
-pub async fn get_refresh_progress(_app_handle: AppHandle) -> Result<RefreshProgressInfo, String> {
+pub async fn get_refresh_progress(app_handle: AppHandle) -> Result<RefreshProgressInfo, String> {
     use crate::feed_aggregator::FeedAggregator;
 
-    let sources = FeedAggregator::get_available_sources();
+    let config_service = ConfigurationService::new(&app_handle)?;
+    let config = config_service.get_app_config()?;
+    
+    let sources = FeedAggregator::get_available_sources_from_config(&config);
     let enabled_sources = sources.iter().filter(|s| s.enabled).count() as u32;
 
     Ok(RefreshProgressInfo {
@@ -211,7 +222,7 @@ pub async fn get_config_info(app_handle: AppHandle) -> Result<ConfigInfo, String
     let config = service.get_app_config()?;
     let config_dir = service.get_config_directory();
 
-    let sources = FeedAggregator::get_available_sources();
+    let sources = FeedAggregator::get_available_sources_from_config(&config);
     let enabled_sources = sources.iter().filter(|s| s.enabled).count();
 
     Ok(ConfigInfo {
@@ -225,11 +236,16 @@ pub async fn get_config_info(app_handle: AppHandle) -> Result<ConfigInfo, String
 
 #[tauri::command]
 pub async fn get_feed_sources(
-    _app_handle: AppHandle,
+    app_handle: AppHandle,
 ) -> Result<Vec<crate::feed_aggregator::NewsSource>, String> {
     use crate::feed_aggregator::FeedAggregator;
 
-    let sources = FeedAggregator::get_available_sources();
+    let config_service = ConfigurationService::new(&app_handle)?;
+    let config = config_service.get_app_config()?;
+    
+    log::info!("Getting feed sources from config, found {} sources", config.feed_sources.len());
+    
+    let sources = FeedAggregator::get_available_sources_from_config(&config);
     Ok(sources)
 }
 
@@ -250,4 +266,33 @@ pub struct ConfigInfo {
     pub auto_refresh_interval: u32,
     pub total_feed_sources: usize,
     pub enabled_feed_sources: usize,
+}
+
+
+
+#[tauri::command]
+pub async fn update_feed_source_enabled(
+    sourceId: String,
+    enabled: bool,
+    app_handle: AppHandle,
+) -> Result<(), String> {
+    log::info!("Updating feed source '{}' to enabled={}", sourceId, enabled);
+    
+    let service = ConfigurationService::new(&app_handle)?;
+    let mut config = service.get_app_config()?;
+
+    log::info!("Current config has {} feed sources", config.feed_sources.len());
+
+    // Find and update the feed source
+    if let Some(source) = config.feed_sources.iter_mut().find(|s| s.id == sourceId) {
+        log::info!("Found source '{}', updating enabled from {} to {}", source.name, source.enabled, enabled);
+        source.enabled = enabled;
+        service.update_app_config(config)?;
+        log::info!("Successfully updated feed source '{}'", sourceId);
+        Ok(())
+    } else {
+        let available_sources: Vec<String> = config.feed_sources.iter().map(|s| s.id.clone()).collect();
+        log::error!("Feed source '{}' not found. Available sources: {:?}", sourceId, available_sources);
+        Err(format!("Feed source '{}' not found", sourceId))
+    }
 }

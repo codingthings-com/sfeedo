@@ -155,7 +155,11 @@ impl RefreshManager {
 
         use crate::feed_aggregator::FeedAggregator;
 
-        let sources = FeedAggregator::get_available_sources();
+        // Get current configuration
+        let config = self.config_service.get_app_config()
+            .map_err(|e| format!("Failed to get app config: {}", e))?;
+
+        let sources = FeedAggregator::get_available_sources_from_config(&config);
         let enabled_sources: Vec<_> = sources.iter().filter(|s| s.enabled).collect();
 
         if enabled_sources.is_empty() {
@@ -178,7 +182,7 @@ impl RefreshManager {
         // Create feed aggregator and perform refresh
         let mut aggregator = FeedAggregator::new();
 
-        let result = match aggregator.refresh_all_feeds().await {
+        let result = match aggregator.refresh_all_feeds_with_config(&config).await {
             Ok(fetch_result) => {
                 let duration = start_time.elapsed();
 
@@ -354,7 +358,6 @@ impl RefreshManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
 
     #[test]
     fn test_refresh_progress_serialization() {

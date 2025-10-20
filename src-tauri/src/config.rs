@@ -149,7 +149,6 @@ impl ConfigManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
     use tempfile::TempDir;
 
     fn create_test_config_manager() -> (ConfigManager, TempDir) {
@@ -177,13 +176,11 @@ mod tests {
 
         let mut config = AppConfig::default();
         config.auto_refresh.interval_minutes = 60;
-        config.ui.articles_per_page = 25;
 
         config_manager.save_config(&config).unwrap();
         let loaded_config = config_manager.load_config().unwrap();
 
         assert_eq!(loaded_config.auto_refresh.interval_minutes, 60);
-        assert_eq!(loaded_config.ui.articles_per_page, 25);
     }
 
     #[test]
@@ -191,11 +188,11 @@ mod tests {
         let (config_manager, _temp_dir) = create_test_config_manager();
 
         let mut invalid_config = AppConfig::default();
-        invalid_config.auto_refresh.interval_minutes = 2; // Too low
+        invalid_config.auto_refresh.interval_minutes = 1; // Too low
 
         let result = config_manager.save_config(&invalid_config);
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("at least 5 minutes"));
+        assert!(result.unwrap_err().contains("at least 2 minutes"));
     }
 
     #[test]

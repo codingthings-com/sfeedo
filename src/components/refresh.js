@@ -68,11 +68,11 @@ class RefreshManager {
       
       if (result.success) {
         const message = result.new_articles > 0 
-          ? `Refresh completed - ${result.new_articles} new articles found`
-          : 'Refresh completed - no new articles';
+          ? `REFRESH COMPLETE - ${result.new_articles} NEW ARTICLES`
+          : 'REFRESH COMPLETE - NO NEW ARTICLES';
         this.completeRefresh(message);
       } else {
-        this.completeRefresh(result.message || 'Refresh failed', true);
+        this.completeRefresh((result.message || 'REFRESH FAILED').toUpperCase(), true);
       }
       
       // Reload articles if article manager exists
@@ -82,13 +82,13 @@ class RefreshManager {
       
     } catch (error) {
       console.error('Refresh failed:', error);
-      this.completeRefresh('Refresh failed', true);
-      this.showError('Failed to refresh feeds. Please check your internet connection.');
+      this.completeRefresh('REFRESH FAILED', true);
+      this.showError('FAILED TO REFRESH FEEDS. CHECK INTERNET CONNECTION.');
     }
   }
 
   // Start refresh process
-  startRefresh(message = 'Refreshing feeds...') {
+  startRefresh(message = 'REFRESHING...') {
     this.isRefreshing = true;
     this.refreshProgress = 0;
     this.completedSources = 0;
@@ -106,7 +106,7 @@ class RefreshManager {
   }
 
   // Complete refresh process
-  completeRefresh(message = 'Refresh completed', isError = false) {
+  completeRefresh(message = 'REFRESH COMPLETE', isError = false) {
     this.isRefreshing = false;
     this.refreshProgress = 100;
     this.lastRefreshTime = new Date();
@@ -164,10 +164,10 @@ class RefreshManager {
 
   // Update progress display
   updateProgressDisplay() {
-    const message = `Refreshing feeds... (${this.completedSources}/${this.totalSources})`;
+    const message = `REFRESHING... (${this.completedSources}/${this.totalSources})`;
     this.updateStatus(message);
     
-    const loadingText = this.loadingOverlay?.querySelector('.loading-text');
+    const loadingText = this.loadingOverlay?.querySelector('.teletext-loading-text');
     if (loadingText) {
       loadingText.textContent = message;
     }
@@ -180,11 +180,11 @@ class RefreshManager {
     this.refreshBtn.disabled = isRefreshing;
     
     if (isRefreshing) {
-      this.refreshIcon.classList.add('spinning');
-      this.refreshBtn.title = 'Refreshing...';
+      this.refreshBtn.style.opacity = '0.5';
+      this.refreshBtn.title = 'REFRESHING...';
     } else {
-      this.refreshIcon.classList.remove('spinning');
-      this.refreshBtn.title = 'Refresh feeds';
+      this.refreshBtn.style.opacity = '1';
+      this.refreshBtn.title = 'REFRESH FEEDS';
     }
   }
 
@@ -193,9 +193,9 @@ class RefreshManager {
     if (!this.loadingOverlay) return;
     
     this.loadingOverlay.classList.remove('hidden');
-    const loadingText = this.loadingOverlay.querySelector('.loading-text');
+    const loadingText = this.loadingOverlay.querySelector('.teletext-loading-text');
     if (loadingText) {
-      loadingText.textContent = message;
+      loadingText.textContent = message.toUpperCase();
     }
   }
 
@@ -362,7 +362,7 @@ class RefreshManager {
     if (!this.autoRefreshIndicator) return;
     
     if (enabled) {
-      this.autoRefreshIndicator.textContent = `Auto-refresh: ON (${this.autoRefreshInterval}m)`;
+      this.autoRefreshIndicator.textContent = `AUTO: ON (${this.autoRefreshInterval}M)`;
       this.autoRefreshIndicator.classList.remove('hidden');
     } else {
       this.autoRefreshIndicator.classList.add('hidden');

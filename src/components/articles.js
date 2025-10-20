@@ -15,14 +15,24 @@ class ArticleManager {
 
     initializeElements() {
         this.container = document.getElementById('articles-container');
-        this.sortSelect = document.getElementById('sort-select');
+        this.sortUpBtn = document.getElementById('sort-up-btn');
+        this.sortDownBtn = document.getElementById('sort-down-btn');
     }
 
     setupEventListeners() {
-        // Sort change handler
-        this.sortSelect.addEventListener('change', (e) => {
-            this.currentSort = e.target.value;
-            this.renderArticles();
+        // Sort button handlers are set up in main.js
+        // This method is kept for compatibility
+    }
+
+    // New method to set sort order from external calls
+    setSortOrder(sortType) {
+        this.currentSort = sortType;
+        this.renderArticles();
+        
+        // Update button states
+        const sortButtons = document.querySelectorAll('.teletext-sort-btn');
+        sortButtons.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.sort === sortType);
         });
     }
 
@@ -42,10 +52,10 @@ class ArticleManager {
             this.totalCount = response.total_count;
 
             this.renderArticles();
-            window.AppNavigation.updateStatus(`Loaded ${this.articles.length} articles`);
+            window.AppNavigation.updateStatus(`LOADED ${this.articles.length} ARTICLES`);
         } catch (error) {
             console.error('Failed to load articles:', error);
-            window.AppNavigation.updateStatus('Failed to load articles');
+            window.AppNavigation.updateStatus('LOAD FAILED');
             this.showError('Unable to load articles. Please try refreshing.');
         } finally {
             this.isLoading = false;
@@ -109,9 +119,6 @@ class ArticleManager {
     // Render articles in the container
     renderArticles() {
         const sortedArticles = this.getSortedArticles();
-        const startIndex = (this.currentPage - 1) * this.articlesPerPage;
-        const endIndex = startIndex + this.articlesPerPage;
-        const pageArticles = sortedArticles.slice(startIndex, endIndex);
 
         if (sortedArticles.length === 0) {
             this.showEmptyState();
@@ -121,63 +128,47 @@ class ArticleManager {
         const articlesHTML = sortedArticles.map(article => this.createArticleHTML(article)).join('');
         this.container.innerHTML = articlesHTML;
 
-
-
         // Add event listeners to article elements
         this.attachArticleEventListeners();
     }
 
-    // Create HTML for a single article
+    // Create HTML for a single article - teletext style
     createArticleHTML(article) {
         const timeAgo = this.getTimeAgo(article.published_at);
-        const source = article.source_id || 'Unknown Source';
+        const source = (article.source_id || 'UNKNOWN').toUpperCase();
+        const title = this.escapeHtml(article.title).toUpperCase();
+        const summary = this.escapeHtml(article.summary || '').toUpperCase();
 
         return `
-      <article class="article-item" data-article-id="${article.id}">
-        <div class="article-header">
-          <div class="article-meta">
-            <span class="article-source">${source}</span>
-            <span class="article-time">${timeAgo}</span>
-          </div>
+      <article class="teletext-article" data-article-id="${article.id}" tabindex="0">
+        <div class="teletext-article-header">
+          <span class="teletext-article-source">${source}</span>
+          <span class="teletext-article-time">${timeAgo}</span>
         </div>
-        <div class="article-content">
-          <h3 class="article-title">${this.escapeHtml(article.title)}</h3>
-          <p class="article-summary">${this.escapeHtml(article.summary || '')}</p>
-        </div>
-        <div class="article-actions">
-          <button class="action-btn view-btn" data-action="view-full">
-            View Full
-          </button>
-          <button class="action-btn external-btn" data-action="open-external">
-            Open Source
-          </button>
-        </div>
+        <div class="teletext-article-title">${title}</div>
+        <div class="teletext-article-content">${summary}</div>
       </article>
     `;
     }
 
     // Attach event listeners to article elements
     attachArticleEventListeners() {
-        const articleItems = this.container.querySelectorAll('.article-item');
+        const articleItems = this.container.querySelectorAll('.teletext-article');
 
         articleItems.forEach(item => {
             const articleId = item.dataset.articleId;
 
-            // Click on article to view details
+            // Click on article content area to view details
             item.addEventListener('click', (e) => {
-                if (!e.target.closest('.article-actions')) {
-                    this.showArticleDetail(articleId);
-                }
+                this.showArticleDetail(articleId);
             });
 
-            // Action buttons
-            const actionButtons = item.querySelectorAll('[data-action]');
-            actionButtons.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const action = btn.dataset.action;
-                    this.handleArticleAction(articleId, action);
-                });
+            // Enter key on focused article
+            item.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.showArticleDetail(articleId);
+                }
             });
         });
     }
@@ -208,14 +199,14 @@ class ArticleManager {
         this.showArticleModal(article);
     }
 
-    // Show article in modal
+    // Show article in modal - teletext style
     showArticleModal(article) {
         const modal = this.createArticleModal(article);
         document.body.appendChild(modal);
 
         // Add event listeners
-        const closeBtn = modal.querySelector('.modal-close');
-        const overlay = modal.querySelector('.modal-overlay');
+        const closeBtn = modal.querySelector('.teletext-modal-close');
+        const overlay = modal.querySelector('.teletext-modal-overlay');
 
         const closeModal = () => {
             document.body.removeChild(modal);
@@ -236,36 +227,39 @@ class ArticleManager {
         document.addEventListener('keydown', handleKeyDown);
     }
 
-    // Create article modal HTML
+    // Create article modal HTML - teletext style
     createArticleModal(article) {
         const modal = document.createElement('div');
-        modal.className = 'article-modal';
+        modal.className = 'teletext-modal';
 
         const timeAgo = this.getTimeAgo(article.published_at);
-        const source = article.source_id || 'Unknown Source';
+        const source = (article.source_id || 'UNKNOWN').toUpperCase();
+        const title = this.escapeHtml(article.title).toUpperCase();
+        const summary = this.escapeHtml(article.summary || '').toUpperCase();
+        const content = this.escapeHtml(article.content || 'FULL CONTENT NOT AVAILABLE. CLICK "OPEN EXTERNAL LINK" TO VIEW ON SOURCE WEBSITE.').toUpperCase();
 
         modal.innerHTML = `
-      <div class="modal-overlay">
-        <div class="modal-content">
-          <div class="modal-header">
-            <div class="modal-meta">
-              <span class="modal-source">${this.escapeHtml(source)}</span>
-              <span class="modal-time">${timeAgo}</span>
+      <div class="teletext-modal-overlay">
+        <div class="teletext-modal-content">
+          <div class="teletext-modal-header">
+            <div class="teletext-modal-meta">
+              <span class="teletext-modal-source">${source}</span>
+              <span class="teletext-modal-time">${timeAgo}</span>
             </div>
-            <button class="modal-close">&times;</button>
+            <button class="teletext-modal-close">X</button>
           </div>
-          <div class="modal-body">
-            <h2 class="modal-title">${this.escapeHtml(article.title)}</h2>
-            <div class="modal-article-content">
-              <p class="modal-summary">${this.escapeHtml(article.summary || '')}</p>
-              <div class="modal-full-content">
-                ${this.escapeHtml(article.content || 'Full content not available. Click "Read Full Article" to view on the source website.')}
+          <div class="teletext-modal-body">
+            <h2 class="teletext-modal-title">${title}</h2>
+            <div class="teletext-modal-article-content">
+              <p class="teletext-modal-summary">${summary}</p>
+              <div class="teletext-modal-full-content">
+                ${content}
               </div>
             </div>
           </div>
-          <div class="modal-footer">
-            <button class="btn btn-primary" data-url="${article.url}">
-              Read Full Article
+          <div class="teletext-modal-footer">
+            <button class="teletext-btn teletext-btn-primary" data-url="${article.url}">
+              OPEN EXTERNAL LINK
             </button>
           </div>
         </div>
@@ -273,7 +267,7 @@ class ArticleManager {
     `;
 
         // Add click handler for the external link button
-        const externalBtn = modal.querySelector('.btn-primary');
+        const externalBtn = modal.querySelector('.teletext-btn-primary');
         externalBtn.addEventListener('click', () => {
           this.openExternalUrl(article.url);
         });
@@ -292,35 +286,35 @@ class ArticleManager {
         }
     }
 
-    // Show empty state
+    // Show empty state - teletext style
     showEmptyState() {
         this.container.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">📰</div>
-        <h3>No Articles Found</h3>
-        <p>No articles are available. Try refreshing your feeds or check your feed sources.</p>
-        <button class="btn btn-primary" onclick="window.AppNavigation.handleRefresh()">
-          Refresh Feeds
+      <div class="teletext-empty-state">
+        <div class="teletext-empty-icon">[ ]</div>
+        <h3>NO ARTICLES FOUND</h3>
+        <p>NO ARTICLES AVAILABLE. TRY REFRESHING FEEDS OR CHECK FEED SOURCES.</p>
+        <button class="teletext-btn teletext-btn-primary" onclick="window.AppNavigation.handleRefresh()">
+          REFRESH FEEDS
         </button>
       </div>
     `;
     }
 
-    // Show error message
+    // Show error message - teletext style
     showError(message) {
         this.container.innerHTML = `
-      <div class="error-state">
-        <div class="error-icon">⚠️</div>
-        <h3>Error Loading Articles</h3>
-        <p>${message}</p>
-        <button class="btn btn-primary" onclick="articleManager.loadArticles()">
-          Try Again
+      <div class="teletext-error-state">
+        <div class="teletext-error-icon">[!]</div>
+        <h3>ERROR LOADING ARTICLES</h3>
+        <p>${message.toUpperCase()}</p>
+        <button class="teletext-btn teletext-btn-primary" onclick="articleManager.loadArticles()">
+          TRY AGAIN
         </button>
       </div>
     `;
     }
 
-    // Utility function to get time ago string
+    // Utility function to get time ago string - teletext style
     getTimeAgo(date) {
         const now = new Date();
         const diffMs = now - new Date(date);
@@ -328,12 +322,15 @@ class ArticleManager {
         const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-        if (diffMins < 1) return 'Just now';
-        if (diffMins < 60) return `${diffMins}m ago`;
-        if (diffHours < 24) return `${diffHours}h ago`;
-        if (diffDays < 7) return `${diffDays}d ago`;
+        if (diffMins < 1) return 'NOW';
+        if (diffMins < 60) return `${diffMins}M`;
+        if (diffHours < 24) return `${diffHours}H`;
+        if (diffDays < 7) return `${diffDays}D`;
 
-        return new Date(date).toLocaleDateString();
+        return new Date(date).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit'
+        }).replace('/', '/');
     }
 
     // Refresh articles
@@ -364,6 +361,14 @@ let articleManager;
 
 document.addEventListener('DOMContentLoaded', () => {
     articleManager = new ArticleManager();
+    
+    // Make it available globally immediately
+    window.articleManager = articleManager;
+
+    // Set up sort buttons now that ArticleManager is ready
+    if (window.setupSortButtons) {
+        window.setupSortButtons();
+    }
 
     // Load articles initially after a short delay to ensure UI is ready
     setTimeout(() => {
@@ -376,4 +381,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Export for global access
 window.ArticleManager = ArticleManager;
-window.articleManager = articleManager;
