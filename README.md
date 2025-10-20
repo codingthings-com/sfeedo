@@ -160,3 +160,16 @@ See the [LICENSE](LICENSE) file for details.
 - Built with [Tauri](https://tauri.app/) framework
 - Uses [finance-news-aggregator-rs](https://crates.io/crates/finance-news-aggregator-rs) for feed parsing
 - Powered by [Rust](https://www.rust-lang.org/) and [Vite](https://vitejs.dev/)
+
+
+## Notes
+
+
+```bash
+~/Library/Application\ Support/com.codingthings.sfeedo/config.json
+
+
+# or 
+
+~/.config/.... 
+```
