@@ -23,9 +23,9 @@ serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 tauri = { version = "2.8.5", features = [] }
 tauri-plugin-log = "2"
-# finance-news-aggregator-rs = "0.1.3"
+finance-news-aggregator-rs = "0.2.1"
 # finance-news-aggregator-rs= { path = "../../finance-news-aggregator-rs"} 
-finance-news-aggregator-rs = { git = "https://github.com/codingthings-com/finance-news-aggregator-rs", branch = "integtests" }
+# finance-news-aggregator-rs = { git = "https://github.com/codingthings-com/finance-news-aggregator-rs", branch = "integtests" }
 
 tokio = { version = "1.0", features = ["full"] }
 chrono = { version = "0.4", features = ["serde"] }

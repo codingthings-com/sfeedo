@@ -32,7 +32,13 @@ pub fn run() {
             update_feed_source_enabled,
             delete_config_file,
             get_config_file_path,
-            open_url_in_browser
+            open_url_in_browser,
+            update_source_topics,
+            add_custom_feed,
+            update_custom_feed,
+            delete_custom_feed,
+            toggle_custom_feed,
+            get_available_topics
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

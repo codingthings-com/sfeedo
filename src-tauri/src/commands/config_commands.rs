@@ -1,5 +1,6 @@
-use crate::models::AppConfig;
+use crate::models::{AppConfig, CustomFeedConfig};
 use crate::services::ConfigurationService;
+use crate::feed_aggregator::FeedAggregator;
 use tauri::AppHandle;
 
 /// Tauri commands for configuration management
@@ -60,4 +61,117 @@ pub async fn get_config_file_path(app_handle: AppHandle) -> Result<String, Strin
 pub async fn sync_configuration(app_handle: AppHandle) -> Result<(), String> {
     let service = ConfigurationService::new(&app_handle)?;
     service.sync_configuration()
+}
+
+#[tauri::command]
+pub async fn update_source_topics(
+    source_id: String,
+    enabled_topics: Vec<String>,
+    app_handle: AppHandle,
+) -> Result<(), String> {
+    log::info!("Updating topics for source '{}': {:?}", source_id, enabled_topics);
+    
+    let service = ConfigurationService::new(&app_handle)?;
+    let mut config = service.get_app_config()?;
+    
+    // Find and update the source
+    if let Some(source) = config.feed_sources.iter_mut().find(|s| s.id == source_id) {
+        log::info!("Found source '{}', updating topics from {:?} to {:?}", 
+                   source.name, source.enabled_topics, enabled_topics);
+        source.enabled_topics = enabled_topics;
+        service.update_app_config(config)?;
+        log::info!("Successfully updated topics for source '{}'", source_id);
+        Ok(())
+    } else {
+        log::error!("Source '{}' not found", source_id);
+        Err(format!("Source not found: {}", source_id))
+    }
+}
+
+#[tauri::command]
+pub async fn add_custom_feed(
+    app_handle: AppHandle,
+    name: String,
+    url: String,
+) -> Result<String, String> {
+    let service = ConfigurationService::new(&app_handle)?;
+    let mut config = service.get_app_config()?;
+    
+    // Generate ID from name
+    let id = format!("custom_{}", name.to_lowercase().replace(" ", "_"));
+    
+    // Check if ID already exists
+    if config.custom_feeds.iter().any(|f| f.id == id) {
+        return Err("A feed with this name already exists".to_string());
+    }
+    
+    let custom_feed = CustomFeedConfig {
+        id: id.clone(),
+        name,
+        url,
+        enabled: true,
+        last_fetched: None,
+    };
+    
+    config.custom_feeds.push(custom_feed);
+    service.update_app_config(config)?;
+    
+    Ok(id)
+}
+
+#[tauri::command]
+pub async fn update_custom_feed(
+    app_handle: AppHandle,
+    id: String,
+    name: String,
+    url: String,
+) -> Result<(), String> {
+    let service = ConfigurationService::new(&app_handle)?;
+    let mut config = service.get_app_config()?;
+    
+    if let Some(feed) = config.custom_feeds.iter_mut().find(|f| f.id == id) {
+        feed.name = name;
+        feed.url = url;
+        service.update_app_config(config)?;
+        Ok(())
+    } else {
+        Err(format!("Custom feed not found: {}", id))
+    }
+}
+
+#[tauri::command]
+pub async fn delete_custom_feed(
+    app_handle: AppHandle,
+    id: String,
+) -> Result<(), String> {
+    let service = ConfigurationService::new(&app_handle)?;
+    let mut config = service.get_app_config()?;
+    
+    config.custom_feeds.retain(|f| f.id != id);
+    service.update_app_config(config)?;
+    
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn toggle_custom_feed(
+    app_handle: AppHandle,
+    id: String,
+    enabled: bool,
+) -> Result<(), String> {
+    let service = ConfigurationService::new(&app_handle)?;
+    let mut config = service.get_app_config()?;
+    
+    if let Some(feed) = config.custom_feeds.iter_mut().find(|f| f.id == id) {
+        feed.enabled = enabled;
+        service.update_app_config(config)?;
+        Ok(())
+    } else {
+        Err(format!("Custom feed not found: {}", id))
+    }
+}
+
+#[tauri::command]
+pub async fn get_available_topics(source_id: String) -> Result<Vec<String>, String> {
+    Ok(FeedAggregator::get_available_topics_for_source(&source_id))
 }

@@ -951,8 +951,9 @@ dependencies = [
 
 [[package]]
 name = "finance-news-aggregator-rs"
-version = "0.2.0"
-source = "git+https://github.com/codingthings-com/finance-news-aggregator-rs?branch=integtests#163d9dec2f8d65f8b0e60d6e02e75c5b5a6c5bbe"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "708825979e92732d4d1dad03827b82b96bc0f5cfdc11fc37a455e260c83f7621"
 dependencies = [
  "anyhow",
  "async-trait",

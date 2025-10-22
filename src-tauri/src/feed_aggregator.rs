@@ -1,15 +1,18 @@
 use crate::models::Article;
 use chrono::{DateTime, Utc};
-use finance_news_aggregator_rs::{NewsArticle as ExternalNewsArticle, NewsClient};
+use finance_news_aggregator_rs::{NewsArticle as ExternalNewsArticle, NewsClient, news_source::NewsSource as NewsSourceTrait};
 use tokio::time::{Duration, Instant};
 
-/// Available financial news sources
+/// Available financial news sources with topics
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct NewsSource {
     pub id: String,
     pub name: String,
     pub enabled: bool,
-    pub url: String,
+    pub source_type: String, // "builtin" or "custom"
+    pub url: Option<String>,
+    pub available_topics: Vec<String>,
+    pub enabled_topics: Vec<String>,
     pub last_fetched: Option<String>,
 }
 
@@ -26,22 +29,70 @@ impl FeedAggregator {
         Self { news_client }
     }
 
+    /// Get available topics for a built-in source dynamically
+    pub fn get_available_topics_for_source(source_id: &str) -> Vec<String> {
+        let mut client = NewsClient::new();
+        
+        let topics: Vec<&str> = match source_id {
+            "yahoo" => client.yahoo_finance().available_topics(),
+            "cnbc" => client.cnbc().available_topics(),
+            "marketwatch" => client.market_watch().available_topics(),
+            "seeking_alpha" => client.seeking_alpha().available_topics(),
+            "wsj" => client.wsj().available_topics(),
+            "nasdaq" => client.nasdaq().available_topics(),
+            "cnn" => client.cnn_finance().available_topics(),
+            _ => vec![],
+        };
+        
+        // Convert &str to String
+        let result: Vec<String> = topics.iter().map(|s| s.to_string()).collect();
+        log::info!("Available topics for {}: {:?}", source_id, result);
+        result
+    }
+
     /// Convert FeedSourceConfig to NewsSource
     fn config_to_news_source(config: &crate::models::FeedSourceConfig) -> NewsSource {
+        let available_topics = Self::get_available_topics_for_source(&config.id);
+
         NewsSource {
             id: config.id.clone(),
             name: config.name.clone(),
             enabled: config.enabled,
-            url: config.url.clone(),
+            source_type: "builtin".to_string(),
+            url: None,
+            available_topics,
+            enabled_topics: config.enabled_topics.clone(),
             last_fetched: config.last_fetched.clone(),
         }
     }
 
-    /// Get all available news sources from configuration
+    /// Convert CustomFeedConfig to NewsSource
+    fn custom_to_news_source(config: &crate::models::CustomFeedConfig) -> NewsSource {
+        NewsSource {
+            id: config.id.clone(),
+            name: config.name.clone(),
+            enabled: config.enabled,
+            source_type: "custom".to_string(),
+            url: Some(config.url.clone()),
+            available_topics: vec![],
+            enabled_topics: vec![],
+            last_fetched: config.last_fetched.clone(),
+        }
+    }
+
+    /// Get all available news sources from configuration (built-in + custom)
     pub fn get_available_sources_from_config(config: &crate::models::AppConfig) -> Vec<NewsSource> {
-        config.feed_sources.iter()
+        let mut sources: Vec<NewsSource> = config.feed_sources.iter()
             .map(Self::config_to_news_source)
-            .collect()
+            .collect();
+        
+        // Add custom feeds
+        sources.extend(
+            config.custom_feeds.iter()
+                .map(Self::custom_to_news_source)
+        );
+        
+        sources
     }
 
     /// Get all available news sources (fallback for backward compatibility)
@@ -73,38 +124,74 @@ impl FeedAggregator {
             });
         }
 
-        for (index, source) in enabled_sources.iter().enumerate() {
+        for (index, source_config) in enabled_sources.iter().enumerate() {
             log::debug!(
                 "Processing source {}/{}: {}",
                 index + 1,
                 enabled_sources.len(),
-                source.name
+                source_config.name
             );
 
-            match self
-                .fetch_from_single_source(&source.id, &source.name)
-                .await
-            {
-                Ok(articles) => {
-                    log::info!(
-                        "Successfully fetched {} articles from {}",
-                        articles.len(),
-                        source.name
-                    );
-                    all_articles.extend(articles);
-                    successful_sources.push(source.id.clone());
+            if source_config.source_type == "builtin" {
+                // Find the built-in config for this source
+                let builtin_config = config.feed_sources.iter()
+                    .find(|s| s.id == source_config.id);
+                
+                if let Some(builtin_config) = builtin_config {
+                    // Fetch from all enabled topics
+                    for topic in &builtin_config.enabled_topics {
+                        log::debug!("Fetching topic '{}' from {}", topic, source_config.name);
+                        
+                        match self.fetch_from_builtin_source(&source_config.id, &source_config.name, topic).await {
+                            Ok(articles) => {
+                                log::info!(
+                                    "Successfully fetched {} articles from {} ({})",
+                                    articles.len(),
+                                    source_config.name,
+                                    topic
+                                );
+                                all_articles.extend(articles);
+                            }
+                            Err(e) => {
+                                log::error!("Failed to fetch {} from {}: {}", topic, source_config.name, e);
+                                // Continue with other topics even if one fails
+                            }
+                        }
+                        
+                        // Small delay between topics
+                        tokio::time::sleep(Duration::from_millis(300)).await;
+                    }
+                    successful_sources.push(source_config.id.clone());
                 }
-                Err(e) => {
-                    log::error!("Failed to fetch from {}: {}", source.name, e);
-                    failed_sources.push(NewsSourceError {
-                        source_id: source.id.clone(),
-                        source_name: source.name.clone(),
-                        error: e.user_message(),
-                    });
+            } else if source_config.source_type == "custom" {
+                // Find the custom feed config
+                let custom_config = config.custom_feeds.iter()
+                    .find(|s| s.id == source_config.id);
+                
+                if let Some(custom_config) = custom_config {
+                    match self.fetch_from_custom_feed(&custom_config.url, &source_config.name).await {
+                        Ok(articles) => {
+                            log::info!(
+                                "Successfully fetched {} articles from custom feed {}",
+                                articles.len(),
+                                source_config.name
+                            );
+                            all_articles.extend(articles);
+                            successful_sources.push(source_config.id.clone());
+                        }
+                        Err(e) => {
+                            log::error!("Failed to fetch custom feed {}: {}", source_config.name, e);
+                            failed_sources.push(NewsSourceError {
+                                source_id: source_config.id.clone(),
+                                source_name: source_config.name.clone(),
+                                error: e.user_message(),
+                            });
+                        }
+                    }
                 }
             }
 
-            // Add a small delay between requests to be respectful to servers
+            // Add a small delay between sources to be respectful to servers
             if index < enabled_sources.len() - 1 {
                 tokio::time::sleep(Duration::from_millis(500)).await;
             }
@@ -128,77 +215,76 @@ impl FeedAggregator {
         })
     }
 
-    /// Fetch articles from a single news source using the built-in aggregator functions
-    async fn fetch_from_single_source(
+    /// Fetch articles from a built-in news source with specific topic
+    async fn fetch_from_builtin_source(
         &mut self,
         source_id: &str,
         source_name: &str,
+        topic: &str,
     ) -> Result<Vec<Article>, FeedError> {
-        log::info!("Fetching articles from source: {}", source_name);
+        log::info!("Fetching topic '{}' from source: {}", topic, source_name);
 
+        // Use fetch_topic method from the library
         let news_articles = match source_id {
-            "yahoo" => self
-                .news_client
-                .yahoo_finance()
-                .headlines()
-                .await
-                .map_err(|e| FeedError::NetworkError(format!("Yahoo Finance error: {}", e)))?,
-            "cnbc" => self
-                .news_client
-                .cnbc()
-                .business()
-                .await
-                .map_err(|e| FeedError::NetworkError(format!("CNBC error: {}", e)))?,
-            "marketwatch" => self
-                .news_client
-                .market_watch()
-                .market_pulse()
-                .await
-                .map_err(|e| FeedError::NetworkError(format!("MarketWatch error: {}", e)))?,
-            "seeking_alpha" => self
-                .news_client
-                .seeking_alpha()
-                .latest_articles()
-                .await
-                .map_err(|e| FeedError::NetworkError(format!("Seeking Alpha error: {}", e)))?,
-            "wsj" => self
-                .news_client
-                .wsj()
-                .market_news()
-                .await
-                .map_err(|e| FeedError::NetworkError(format!("WSJ error: {}", e)))?,
-            "nasdaq" => self
-                .news_client
-                .nasdaq()
-                .stocks()
-                .await
-                .map_err(|e| FeedError::NetworkError(format!("NASDAQ error: {}", e)))?,
-            "cnn" => self
-                .news_client
-                .cnn_finance()
-                .markets()
-                .await
-                .map_err(|e| FeedError::NetworkError(format!("CNN Finance error: {}", e)))?,
-            _ => {
-                return Err(FeedError::ConfigurationError(format!(
-                    "Unsupported news source: {}",
-                    source_id
-                )));
-            }
-        };
+            "yahoo" => self.news_client.yahoo_finance().fetch_topic(topic).await,
+            "cnbc" => self.news_client.cnbc().fetch_topic(topic).await,
+            "marketwatch" => self.news_client.market_watch().fetch_topic(topic).await,
+            "seeking_alpha" => self.news_client.seeking_alpha().fetch_topic(topic).await,
+            "wsj" => self.news_client.wsj().fetch_topic(topic).await,
+            "nasdaq" => self.news_client.nasdaq().fetch_topic(topic).await,
+            "cnn" => self.news_client.cnn_finance().fetch_topic(topic).await,
+            _ => return Err(FeedError::ConfigurationError(format!("Unknown source: {}", source_id))),
+        }.map_err(|e| FeedError::NetworkError(format!("{} error ({}): {}", source_name, topic, e)))?;
 
         log::info!(
-            "Fetched {} articles from {}",
+            "Fetched {} articles from {} ({})",
             news_articles.len(),
-            source_name
+            source_name,
+            topic
         );
 
         // Convert ExternalNewsArticle to our internal Article model
         let articles = news_articles
             .into_iter()
             .map(|mut article| {
-                article.source = Some(source_name.to_string());
+                article.source = Some(format!("{} - {}", source_name, topic));
                 self.convert_external_news_article_to_article(article, source_id)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(articles)
+    }
+
+    /// Fetch articles from a custom RSS/Atom feed using generic source
+    async fn fetch_from_custom_feed(
+        &mut self,
+        url: &str,
+        source_name: &str,
+    ) -> Result<Vec<Article>, FeedError> {
+        log::info!("Fetching custom feed: {} ({})", source_name, url);
+
+        // Use the generic source to fetch any RSS/Atom feed
+        let news_articles = self.news_client
+            .generic()
+            .fetch_feed_by_url(url)
+            .await
+            .map_err(|e| FeedError::NetworkError(format!("Custom feed error: {}", e)))?;
+
+        log::info!(
+            "Fetched {} articles from custom feed {}",
+            news_articles.len(),
+            source_name
+        );
+
+        // Generate a simple ID from the source name
+        let source_id = source_name.to_lowercase().replace(" ", "_");
+
+        // Convert ExternalNewsArticle to our internal Article model
+        let articles = news_articles
+            .into_iter()
+            .map(|mut article| {
+                article.source = Some(source_name.to_string());
+                self.convert_external_news_article_to_article(article, &source_id)
             })
             .collect::<Result<Vec<_>, _>>()?;
 

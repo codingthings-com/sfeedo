@@ -135,6 +135,98 @@ export class FeedSourceAPI {
     }
   }
 
+  /**
+   * Update enabled topics for a source
+   * @param {string} sourceId - Feed source ID
+   * @param {Array<string>} enabledTopics - List of enabled topic names
+   * @returns {Promise<void>}
+   */
+  static async updateSourceTopics(sourceId, enabledTopics) {
+    try {
+      return await invoke('update_source_topics', {
+        sourceId,
+        enabledTopics
+      });
+    } catch (error) {
+      console.error('Failed to update source topics:', error);
+      throw new Error(`Failed to update source topics: ${error}`);
+    }
+  }
+
+  /**
+   * Get available topics for a source
+   * @param {string} sourceId - Feed source ID
+   * @returns {Promise<Array<string>>}
+   */
+  static async getAvailableTopics(sourceId) {
+    try {
+      return await invoke('get_available_topics', { source_id: sourceId });
+    } catch (error) {
+      console.error('Failed to get available topics:', error);
+      throw new Error(`Failed to get available topics: ${error}`);
+    }
+  }
+
+  /**
+   * Add a custom RSS/Atom feed
+   * @param {string} name - Feed name
+   * @param {string} url - Feed URL
+   * @returns {Promise<string>} Feed ID
+   */
+  static async addCustomFeed(name, url) {
+    try {
+      return await invoke('add_custom_feed', { name, url });
+    } catch (error) {
+      console.error('Failed to add custom feed:', error);
+      throw new Error(`Failed to add custom feed: ${error}`);
+    }
+  }
+
+  /**
+   * Update a custom feed
+   * @param {string} id - Feed ID
+   * @param {string} name - Feed name
+   * @param {string} url - Feed URL
+   * @returns {Promise<void>}
+   */
+  static async updateCustomFeed(id, name, url) {
+    try {
+      return await invoke('update_custom_feed', { id, name, url });
+    } catch (error) {
+      console.error('Failed to update custom feed:', error);
+      throw new Error(`Failed to update custom feed: ${error}`);
+    }
+  }
+
+  /**
+   * Delete a custom feed
+   * @param {string} id - Feed ID
+   * @returns {Promise<void>}
+   */
+  static async deleteCustomFeed(id) {
+    try {
+      return await invoke('delete_custom_feed', { id });
+    } catch (error) {
+      console.error('Failed to delete custom feed:', error);
+      throw new Error(`Failed to delete custom feed: ${error}`);
+    }
+  }
+
+  /**
+   * Toggle custom feed enabled state
+   * @param {string} id - Feed ID
+   * @param {boolean} enabled - Enabled state
+   * @returns {Promise<void>}
+   */
+  static async toggleCustomFeed(id, enabled) {
+    try {
+      return await invoke('toggle_custom_feed', { id, enabled });
+    } catch (error) {
+      console.error('Failed to toggle custom feed:', error);
+      throw new Error(`Failed to toggle custom feed: ${error}`);
+    }
+  }
+
   // Note: Add/Remove feed sources not implemented - only built-in sources can be enabled/disabled
   // /**
   //  * Remove a feed source

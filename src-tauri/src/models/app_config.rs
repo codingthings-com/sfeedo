@@ -7,15 +7,28 @@ pub struct AppConfig {
     pub auto_refresh: AutoRefreshConfig,
     pub ui: UiConfig,
     pub feed_sources: Vec<FeedSourceConfig>,
+    #[serde(default)]
+    pub custom_feeds: Vec<CustomFeedConfig>,
 }
 
-/// Feed source configuration
+/// Feed source configuration (built-in sources)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FeedSourceConfig {
     pub id: String,
     pub name: String,
     pub enabled: bool,
+    #[serde(default)]
+    pub enabled_topics: Vec<String>, // Topics enabled for this source
+    pub last_fetched: Option<String>,
+}
+
+/// Custom feed configuration (user-added RSS/Atom feeds)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CustomFeedConfig {
+    pub id: String,
+    pub name: String,
     pub url: String,
+    pub enabled: bool,
     pub last_fetched: Option<String>,
 }
 
@@ -47,52 +60,53 @@ impl Default for AppConfig {
                     id: "yahoo".to_string(),
                     name: "Yahoo Finance".to_string(),
                     enabled: true,
-                    url: "Built-in scraper".to_string(),
+                    enabled_topics: vec!["headlines".to_string()],
                     last_fetched: None,
                 },
                 FeedSourceConfig {
                     id: "cnbc".to_string(),
-                    name: "CNBC Business".to_string(),
+                    name: "CNBC".to_string(),
                     enabled: true,
-                    url: "Built-in scraper".to_string(),
+                    enabled_topics: vec!["business".to_string()],
                     last_fetched: None,
                 },
                 FeedSourceConfig {
                     id: "marketwatch".to_string(),
                     name: "MarketWatch".to_string(),
                     enabled: true,
-                    url: "Built-in scraper".to_string(),
+                    enabled_topics: vec!["market_pulse".to_string()],
                     last_fetched: None,
                 },
                 FeedSourceConfig {
                     id: "seeking_alpha".to_string(),
                     name: "Seeking Alpha".to_string(),
                     enabled: true,
-                    url: "Built-in scraper".to_string(),
+                    enabled_topics: vec!["latest_articles".to_string()],
                     last_fetched: None,
                 },
                 FeedSourceConfig {
                     id: "wsj".to_string(),
                     name: "Wall Street Journal".to_string(),
                     enabled: true,
-                    url: "Built-in scraper".to_string(),
+                    enabled_topics: vec!["market_news".to_string()],
                     last_fetched: None,
                 },
                 FeedSourceConfig {
                     id: "nasdaq".to_string(),
                     name: "NASDAQ".to_string(),
                     enabled: true,
-                    url: "Built-in scraper".to_string(),
+                    enabled_topics: vec!["stocks".to_string()],
                     last_fetched: None,
                 },
                 FeedSourceConfig {
                     id: "cnn".to_string(),
                     name: "CNN Finance".to_string(),
                     enabled: true,
-                    url: "Built-in scraper".to_string(),
+                    enabled_topics: vec!["markets".to_string()],
                     last_fetched: None,
                 },
             ],
+            custom_feeds: vec![],
         }
     }
 }
