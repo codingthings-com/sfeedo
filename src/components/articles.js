@@ -37,12 +37,16 @@ class ArticleManager {
     }
 
     // Load articles from Tauri backend
-    async loadArticles() {
+    async loadArticles(silent = false) {
         if (this.isLoading) return;
         
         try {
             this.isLoading = true;
-            window.AppNavigation.showProgress('Loading articles...');
+            
+            // Only show loading overlay if not silent
+            if (!silent) {
+                window.AppNavigation.showProgress('Loading articles...');
+            }
 
             // Call Tauri backend to get all articles
             const response = await TauriAPI.articles.getArticles({});
@@ -52,14 +56,22 @@ class ArticleManager {
             this.totalCount = response.total_count;
 
             this.renderArticles();
-            window.AppNavigation.updateStatus(`LOADED ${this.articles.length} ARTICLES`);
+            
+            // Only update status if not silent
+            if (!silent) {
+                window.AppNavigation.updateStatus(`LOADED ${this.articles.length} ARTICLES`);
+            }
         } catch (error) {
             console.error('Failed to load articles:', error);
             window.AppNavigation.updateStatus('LOAD FAILED');
             this.showError('Unable to load articles. Please try refreshing.');
         } finally {
             this.isLoading = false;
-            window.AppNavigation.hideProgress();
+            
+            // Only hide progress if not silent
+            if (!silent) {
+                window.AppNavigation.hideProgress();
+            }
         }
     }
 

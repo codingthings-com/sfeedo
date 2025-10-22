@@ -70,14 +70,15 @@ class RefreshManager {
         const message = result.new_articles > 0 
           ? `REFRESH COMPLETE - ${result.new_articles} NEW ARTICLES`
           : 'REFRESH COMPLETE - NO NEW ARTICLES';
+        
+        // Reload articles silently (without showing loading overlay)
+        if (window.articleManager) {
+          await window.articleManager.loadArticles(true); // Pass true for silent reload
+        }
+        
         this.completeRefresh(message);
       } else {
         this.completeRefresh((result.message || 'REFRESH FAILED').toUpperCase(), true);
-      }
-      
-      // Reload articles if article manager exists
-      if (window.articleManager) {
-        await window.articleManager.refresh();
       }
       
     } catch (error) {
@@ -329,14 +330,15 @@ class RefreshManager {
         const message = result.new_articles > 0 
           ? `Auto-refresh completed - ${result.new_articles} new articles found`
           : 'Auto-refresh completed - no new articles';
+        
+        // Reload articles silently (without showing loading overlay)
+        if (window.articleManager) {
+          await window.articleManager.loadArticles(true); // Pass true for silent reload
+        }
+        
         this.completeRefresh(message);
       } else {
         this.completeRefresh(result.message || 'Auto-refresh failed', true);
-      }
-      
-      // Reload articles
-      if (window.articleManager) {
-        await window.articleManager.refresh();
       }
       
     } catch (error) {
