@@ -1,6 +1,6 @@
-# Sfeedo - Desktop Feed Reader
+# Sfeedo - Desktop RSS Reader
 
-An RSS/Atom feed reader built with Tauri, Rust, and JavaScript. Fast, lightweight, and native desktop experience for managing your feeds.
+An RSS/Atom reader built with Tauri, Rust, and JavaScript. Fast, lightweight, and native desktop experience for managing your feeds.
 
 ## Features
 
