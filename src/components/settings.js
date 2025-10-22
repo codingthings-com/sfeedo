@@ -23,9 +23,9 @@ class SettingsManager {
       const settingsNavBtn = document.querySelector('[data-view="settings"]');
       if (settingsNavBtn) {
         settingsNavBtn.addEventListener('click', () => {
-          console.log('SettingsManager: Settings nav button clicked');
+          // console.log('SettingsManager: Settings nav button clicked');
           setTimeout(() => {
-            console.log('SettingsManager: Triggering render after nav click');
+            // console.log('SettingsManager: Triggering render after nav click');
             this.renderSettings();
           }, 100);
         });
@@ -35,52 +35,52 @@ class SettingsManager {
 
   // Load configuration from backend
   async loadConfiguration() {
-    console.log('SettingsManager: Starting loadConfiguration');
+    // console.log('SettingsManager: Starting loadConfiguration');
     try {
       this.isLoading = true;
 
-      console.log('SettingsManager: Loading config and feed sources...');
+      // console.log('SettingsManager: Loading config and feed sources...');
       // Load both config and feed sources in parallel
       const [config, feedSources] = await Promise.all([
         TauriAPI.config.getConfig(),
         TauriAPI.feedSources.getFeedSources()
       ]);
 
-      console.log('SettingsManager: Loaded config:', config);
-      console.log('SettingsManager: Loaded feedSources:', feedSources);
+      // console.log('SettingsManager: Loaded config:', config);
+      // console.log('SettingsManager: Loaded feedSources:', feedSources);
 
       this.config = config;
       this.feedSources = feedSources;
       this.isLoading = false; // Set loading to false before rendering
 
       // Always render settings once loaded, regardless of view state
-      console.log('SettingsManager: Rendering settings...');
+      // console.log('SettingsManager: Rendering settings...');
       this.renderSettings();
     } catch (error) {
-      console.error('SettingsManager: Failed to load configuration:', error);
+      // console.error('SettingsManager: Failed to load configuration:', error);
       window.AppNavigation.updateStatus('Failed to load settings');
       this.showError('Failed to load settings. Please try refreshing.');
     } finally {
       this.isLoading = false;
-      console.log('SettingsManager: loadConfiguration finished');
+      // console.log('SettingsManager: loadConfiguration finished');
     }
   }
 
   // Render the complete settings interface
   renderSettings() {
-    console.log('SettingsManager: renderSettings called');
-    console.log('SettingsManager: container:', this.container);
-    console.log('SettingsManager: isLoading:', this.isLoading);
-    console.log('SettingsManager: config:', this.config);
-    console.log('SettingsManager: feedSources:', this.feedSources);
+    // console.log('SettingsManager: renderSettings called');
+    // console.log('SettingsManager: container:', this.container);
+    // console.log('SettingsManager: isLoading:', this.isLoading);
+    // console.log('SettingsManager: config:', this.config);
+    // console.log('SettingsManager: feedSources:', this.feedSources);
 
     if (!this.container) {
-      console.error('SettingsManager: No container found!');
+      // console.error('SettingsManager: No container found!');
       return;
     }
 
     if (this.isLoading || !this.config || !this.feedSources) {
-      console.log('SettingsManager: Showing loading state');
+      // console.log('SettingsManager: Showing loading state');
       this.container.innerHTML = `
         <div class="settings-loading">
           <div class="spinner"></div>
@@ -90,7 +90,7 @@ class SettingsManager {
       return;
     }
 
-    console.log('SettingsManager: Rendering full settings');
+    // console.log('SettingsManager: Rendering full settings');
     const settingsHTML = `
       <div class="teletext-settings-sections">
         ${this.renderFeedSourcesSection()}
@@ -103,19 +103,19 @@ class SettingsManager {
 
     this.container.innerHTML = settingsHTML;
     this.attachSettingsEventListeners();
-    console.log('SettingsManager: Settings rendered successfully');
+    // console.log('SettingsManager: Settings rendered successfully');
   }
 
   // Render feed sources management section - teletext style
   renderFeedSourcesSection() {
-    console.log('renderFeedSourcesSection: feedSources =', this.feedSources);
+    // console.log('renderFeedSourcesSection: feedSources =', this.feedSources);
     const builtinSources = this.feedSources.filter(s => s.source_type === 'builtin');
     const customSources = this.feedSources.filter(s => s.source_type === 'custom');
-    console.log('builtinSources:', builtinSources);
-    console.log('customSources:', customSources);
+    // console.log('builtinSources:', builtinSources);
+    // console.log('customSources:', customSources);
 
     const builtinSourcesHTML = builtinSources.map(source => {
-      console.log('Rendering source:', source.id, 'available_topics:', source.available_topics, 'enabled_topics:', source.enabled_topics);
+      // console.log('Rendering source:', source.id, 'available_topics:', source.available_topics, 'enabled_topics:', source.enabled_topics);
       return `
       <div class="teletext-setting-item" data-source-id="${source.id}">
         <div class="teletext-setting-info">
@@ -385,7 +385,7 @@ class SettingsManager {
       // Dispatch settings change event
       this.dispatchSettingsChangeEvent(settingPath, value, oldValue);
     } catch (error) {
-      console.error('Failed to save setting:', error);
+      // console.error('Failed to save setting:', error);
       // Revert the change
       current[finalKey] = oldValue;
       element.checked = oldValue; // For checkboxes
@@ -446,7 +446,7 @@ class SettingsManager {
   // Create source dialog (edit only)
   createSourceDialog(source) {
     if (!source) {
-      console.error('createSourceDialog called without source - add functionality removed');
+      // console.error('createSourceDialog called without source - add functionality removed');
       return;
     }
     
@@ -554,7 +554,7 @@ class SettingsManager {
       this.renderSettings();
       window.AppNavigation.updateStatus(`Updated feed source: ${sourceData.name}`);
     } catch (error) {
-      console.error('Failed to update feed source:', error);
+      // console.error('Failed to update feed source:', error);
       window.AppNavigation.updateStatus('Failed to update feed source');
       throw error;
     }
@@ -576,7 +576,7 @@ class SettingsManager {
       this.renderSettings();
       window.AppNavigation.updateStatus(`Removed feed source: ${source.name}`);
     } catch (error) {
-      console.error('Failed to remove feed source:', error);
+      // console.error('Failed to remove feed source:', error);
       window.AppNavigation.updateStatus('Failed to remove feed source');
     }
   }
@@ -593,7 +593,7 @@ class SettingsManager {
       this.renderSettings();
       window.AppNavigation.updateStatus(`${enabled ? 'Enabled' : 'Disabled'} feed source: ${source.name}`);
     } catch (error) {
-      console.error('Failed to toggle feed source:', error);
+      // console.error('Failed to toggle feed source:', error);
       window.AppNavigation.updateStatus('Failed to update feed source');
       // Revert the toggle
       const toggle = this.container.querySelector(`[data-source-id="${sourceId}"]`);
@@ -608,7 +608,7 @@ class SettingsManager {
     try {
       await TauriAPI.config.updateConfig(this.config);
     } catch (error) {
-      console.error('Failed to save configuration:', error);
+      // console.error('Failed to save configuration:', error);
       throw error;
     }
   }
@@ -682,7 +682,7 @@ class SettingsManager {
       const result = await TauriAPI.feedSources.validateFeedSource(url);
       return result;
     } catch (error) {
-      console.error('Failed to validate feed URL:', error);
+      // console.error('Failed to validate feed URL:', error);
       return {
         is_valid: false,
         error_message: 'Failed to validate URL'
@@ -703,7 +703,7 @@ class SettingsManager {
       window.AppNavigation.updateStatus('Configuration reset successfully');
       await this.loadConfiguration();
     } catch (error) {
-      console.error('Failed to reset configuration:', error);
+      // console.error('Failed to reset configuration:', error);
       window.AppNavigation.hideProgress();
       window.AppNavigation.updateStatus('Failed to reset configuration');
     }
@@ -711,11 +711,11 @@ class SettingsManager {
 
   // Show topics management dialog
   async showTopicsDialog(sourceId) {
-    console.log('showTopicsDialog called with sourceId:', sourceId);
+    // console.log('showTopicsDialog called with sourceId:', sourceId);
     const source = this.feedSources.find(s => s.id === sourceId);
-    console.log('Found source:', source);
+    // console.log('Found source:', source);
     if (!source || source.source_type !== 'builtin') {
-      console.error('Source not found or not builtin:', source);
+      // console.error('Source not found or not builtin:', source);
       return;
     }
 
@@ -761,11 +761,11 @@ class SettingsManager {
     });
 
     dialog.querySelector('.dialog-save').addEventListener('click', async () => {
-      console.log('Save button clicked');
+      // console.log('Save button clicked');
       const checkboxes = dialog.querySelectorAll('input[type="checkbox"]:checked');
-      console.log('Checked checkboxes:', checkboxes);
+      // console.log('Checked checkboxes:', checkboxes);
       const enabledTopics = Array.from(checkboxes).map(cb => cb.value);
-      console.log('Enabled topics:', enabledTopics);
+      // console.log('Enabled topics:', enabledTopics);
 
       if (enabledTopics.length === 0) {
         alert('Please select at least one topic');
@@ -773,15 +773,15 @@ class SettingsManager {
       }
 
       try {
-        console.log('Calling updateSourceTopics with:', sourceId, enabledTopics);
+        // console.log('Calling updateSourceTopics with:', sourceId, enabledTopics);
         await TauriAPI.feedSources.updateSourceTopics(sourceId, enabledTopics);
-        console.log('Update successful');
+        // console.log('Update successful');
         source.enabled_topics = enabledTopics;
         this.renderSettings();
         window.AppNavigation.updateStatus(`Updated topics for ${source.name}`);
         closeDialog();
       } catch (error) {
-        console.error('Failed to update topics:', error);
+        // console.error('Failed to update topics:', error);
         alert('Failed to update topics: ' + error.message);
         window.AppNavigation.updateStatus('Failed to update topics');
       }
@@ -857,7 +857,7 @@ class SettingsManager {
         await this.loadConfiguration();
         closeDialog();
       } catch (error) {
-        console.error('Failed to save custom feed:', error);
+        // console.error('Failed to save custom feed:', error);
         window.AppNavigation.updateStatus('Failed to save custom feed');
       }
     });
@@ -873,7 +873,7 @@ class SettingsManager {
       window.AppNavigation.updateStatus(`Deleted custom feed: ${feed.name}`);
       await this.loadConfiguration();
     } catch (error) {
-      console.error('Failed to delete custom feed:', error);
+      // console.error('Failed to delete custom feed:', error);
       window.AppNavigation.updateStatus('Failed to delete custom feed');
     }
   }
@@ -889,7 +889,7 @@ class SettingsManager {
         window.AppNavigation.updateStatus(`${enabled ? 'Enabled' : 'Disabled'} custom feed`);
       }
     } catch (error) {
-      console.error('Failed to toggle custom feed:', error);
+      // console.error('Failed to toggle custom feed:', error);
       window.AppNavigation.updateStatus('Failed to update custom feed');
     }
   }

@@ -28,7 +28,7 @@ class ArticleManager {
     setSortOrder(sortType) {
         this.currentSort = sortType;
         this.renderArticles();
-        
+
         // Update button states
         const sortButtons = document.querySelectorAll('.teletext-sort-btn');
         sortButtons.forEach(btn => {
@@ -39,10 +39,10 @@ class ArticleManager {
     // Load articles from Tauri backend
     async loadArticles(silent = false) {
         if (this.isLoading) return;
-        
+
         try {
             this.isLoading = true;
-            
+
             // Only show loading overlay if not silent
             if (!silent) {
                 window.AppNavigation.showProgress('Loading articles...');
@@ -50,24 +50,24 @@ class ArticleManager {
 
             // Call Tauri backend to get all articles
             const response = await TauriAPI.articles.getArticles({});
-            
+
             // Update local state with all articles
             this.articles = response.articles;
             this.totalCount = response.total_count;
 
             this.renderArticles();
-            
+
             // Only update status if not silent
             if (!silent) {
                 window.AppNavigation.updateStatus(`LOADED ${this.articles.length} ARTICLES`);
             }
         } catch (error) {
-            console.error('Failed to load articles:', error);
+            // console.error('Failed to load articles:', error);
             window.AppNavigation.updateStatus('LOAD FAILED');
             this.showError('Unable to load articles. Please try refreshing.');
         } finally {
             this.isLoading = false;
-            
+
             // Only hide progress if not silent
             if (!silent) {
                 window.AppNavigation.hideProgress();
@@ -101,11 +101,11 @@ class ArticleManager {
             this.articles = results;
             this.totalCount = results.length;
 
-            
+
             this.renderArticles();
             window.AppNavigation.updateStatus(`Found ${results.length} articles matching "${query}"`);
         } catch (error) {
-            console.error('Failed to search articles:', error);
+            // console.error('Failed to search articles:', error);
             window.AppNavigation.updateStatus('Search failed');
             this.showError('Search failed. Please try again.');
         } finally {
@@ -281,7 +281,7 @@ class ArticleManager {
         // Add click handler for the external link button
         const externalBtn = modal.querySelector('.teletext-btn-primary');
         externalBtn.addEventListener('click', () => {
-          this.openExternalUrl(article.url);
+            this.openExternalUrl(article.url);
         });
 
         return modal;
@@ -292,7 +292,7 @@ class ArticleManager {
         try {
             await TauriAPI.utility.openExternalUrl(url);
         } catch (error) {
-            console.error('Failed to open external URL:', error);
+            // console.error('Failed to open external URL:', error);
             // Fallback to window.open
             window.open(url, '_blank');
         }
@@ -373,7 +373,7 @@ let articleManager;
 
 document.addEventListener('DOMContentLoaded', () => {
     articleManager = new ArticleManager();
-    
+
     // Make it available globally immediately
     window.articleManager = articleManager;
 

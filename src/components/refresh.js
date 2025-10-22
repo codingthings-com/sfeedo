@@ -82,7 +82,7 @@ class RefreshManager {
       }
       
     } catch (error) {
-      console.error('Refresh failed:', error);
+      // console.error('Refresh failed:', error);
       this.completeRefresh('REFRESH FAILED', true);
       this.showError('FAILED TO REFRESH FEEDS. CHECK INTERNET CONNECTION.');
     }
@@ -144,7 +144,7 @@ class RefreshManager {
         this.stopAutoRefresh();
       }
     } catch (error) {
-      console.error('Failed to load refresh configuration:', error);
+      // console.error('Failed to load refresh configuration:', error);
       // Use defaults if loading fails
       this.autoRefreshEnabled = true;
       this.autoRefreshInterval = 30;
@@ -158,7 +158,7 @@ class RefreshManager {
       this.totalSources = progress.enabled_sources;
       return progress;
     } catch (error) {
-      console.error('Failed to get refresh progress:', error);
+      // console.error('Failed to get refresh progress:', error);
       return null;
     }
   }
@@ -342,7 +342,7 @@ class RefreshManager {
       }
       
     } catch (error) {
-      console.error('Auto-refresh failed:', error);
+      // console.error('Auto-refresh failed:', error);
       this.completeRefresh('Auto-refresh failed', true);
     }
   }
@@ -395,7 +395,7 @@ class RefreshManager {
     try {
       return await TauriAPI.refresh.getRefreshStatus();
     } catch (error) {
-      console.error('Failed to get refresh status:', error);
+      // console.error('Failed to get refresh status:', error);
       return null;
     }
   }

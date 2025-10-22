@@ -156,7 +156,9 @@ impl RefreshManager {
         use crate::feed_aggregator::FeedAggregator;
 
         // Get current configuration
-        let config = self.config_service.get_app_config()
+        let config = self
+            .config_service
+            .get_app_config()
             .map_err(|e| format!("Failed to get app config: {}", e))?;
 
         let sources = FeedAggregator::get_available_sources_from_config(&config);
