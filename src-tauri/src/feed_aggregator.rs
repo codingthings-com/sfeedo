@@ -1,6 +1,8 @@
 use crate::models::Article;
 use chrono::{DateTime, Utc};
-use finance_news_aggregator_rs::{NewsArticle as ExternalNewsArticle, NewsClient, news_source::NewsSource as NewsSourceTrait};
+use finance_news_aggregator_rs::{
+    news_source::NewsSource as NewsSourceTrait, NewsArticle as ExternalNewsArticle, NewsClient,
+};
 use tokio::time::{Duration, Instant};
 
 /// Available financial news sources with topics
@@ -32,7 +34,7 @@ impl FeedAggregator {
     /// Get available topics for a built-in source dynamically
     pub fn get_available_topics_for_source(source_id: &str) -> Vec<String> {
         let mut client = NewsClient::new();
-        
+
         let topics: Vec<&str> = match source_id {
             "yahoo" => client.yahoo_finance().available_topics(),
             "cnbc" => client.cnbc().available_topics(),
@@ -43,7 +45,7 @@ impl FeedAggregator {
             "cnn" => client.cnn_finance().available_topics(),
             _ => vec![],
         };
-        
+
         // Convert &str to String
         let result: Vec<String> = topics.iter().map(|s| s.to_string()).collect();
         log::info!("Available topics for {}: {:?}", source_id, result);
@@ -82,16 +84,15 @@ impl FeedAggregator {
 
     /// Get all available news sources from configuration (built-in + custom)
     pub fn get_available_sources_from_config(config: &crate::models::AppConfig) -> Vec<NewsSource> {
-        let mut sources: Vec<NewsSource> = config.feed_sources.iter()
+        let mut sources: Vec<NewsSource> = config
+            .feed_sources
+            .iter()
             .map(Self::config_to_news_source)
             .collect();
-        
+
         // Add custom feeds
-        sources.extend(
-            config.custom_feeds.iter()
-                .map(Self::custom_to_news_source)
-        );
-        
+        sources.extend(config.custom_feeds.iter().map(Self::custom_to_news_source));
+
         sources
     }
 
@@ -103,7 +104,10 @@ impl FeedAggregator {
     }
 
     /// Fetch articles from all available news sources using configuration
-    pub async fn fetch_all_news_with_config(&mut self, config: &crate::models::AppConfig) -> Result<FetchResult, FeedError> {
+    pub async fn fetch_all_news_with_config(
+        &mut self,
+        config: &crate::models::AppConfig,
+    ) -> Result<FetchResult, FeedError> {
         let mut all_articles = Vec::new();
         let mut successful_sources = Vec::new();
         let mut failed_sources = Vec::new();
@@ -112,7 +116,11 @@ impl FeedAggregator {
         let sources = Self::get_available_sources_from_config(config);
         let enabled_sources: Vec<_> = sources.iter().filter(|s| s.enabled).collect();
 
-        log::info!("Starting fetch from {} enabled news sources (out of {} total)", enabled_sources.len(), sources.len());
+        log::info!(
+            "Starting fetch from {} enabled news sources (out of {} total)",
+            enabled_sources.len(),
+            sources.len()
+        );
 
         if enabled_sources.is_empty() {
             log::warn!("No enabled news sources found");
@@ -134,15 +142,24 @@ impl FeedAggregator {
 
             if source_config.source_type == "builtin" {
                 // Find the built-in config for this source
-                let builtin_config = config.feed_sources.iter()
+                let builtin_config = config
+                    .feed_sources
+                    .iter()
                     .find(|s| s.id == source_config.id);
-                
+
                 if let Some(builtin_config) = builtin_config {
                     // Fetch from all enabled topics
                     for topic in &builtin_config.enabled_topics {
                         log::debug!("Fetching topic '{}' from {}", topic, source_config.name);
-                        
-                        match self.fetch_from_builtin_source(&source_config.id, &source_config.name, topic).await {
+
+                        match self
+                            .fetch_from_builtin_source(
+                                &source_config.id,
+                                &source_config.name,
+                                topic,
+                            )
+                            .await
+                        {
                             Ok(articles) => {
                                 log::info!(
                                     "Successfully fetched {} articles from {} ({})",
@@ -153,11 +170,16 @@ impl FeedAggregator {
                                 all_articles.extend(articles);
                             }
                             Err(e) => {
-                                log::error!("Failed to fetch {} from {}: {}", topic, source_config.name, e);
+                                log::error!(
+                                    "Failed to fetch {} from {}: {}",
+                                    topic,
+                                    source_config.name,
+                                    e
+                                );
                                 // Continue with other topics even if one fails
                             }
                         }
-                        
+
                         // Small delay between topics
                         tokio::time::sleep(Duration::from_millis(300)).await;
                     }
@@ -165,11 +187,16 @@ impl FeedAggregator {
                 }
             } else if source_config.source_type == "custom" {
                 // Find the custom feed config
-                let custom_config = config.custom_feeds.iter()
+                let custom_config = config
+                    .custom_feeds
+                    .iter()
                     .find(|s| s.id == source_config.id);
-                
+
                 if let Some(custom_config) = custom_config {
-                    match self.fetch_from_custom_feed(&custom_config.url, &source_config.name).await {
+                    match self
+                        .fetch_from_custom_feed(&custom_config.url, &source_config.name)
+                        .await
+                    {
                         Ok(articles) => {
                             log::info!(
                                 "Successfully fetched {} articles from custom feed {}",
@@ -180,7 +207,11 @@ impl FeedAggregator {
                             successful_sources.push(source_config.id.clone());
                         }
                         Err(e) => {
-                            log::error!("Failed to fetch custom feed {}: {}", source_config.name, e);
+                            log::error!(
+                                "Failed to fetch custom feed {}: {}",
+                                source_config.name,
+                                e
+                            );
                             failed_sources.push(NewsSourceError {
                                 source_id: source_config.id.clone(),
                                 source_name: source_config.name.clone(),
@@ -233,8 +264,16 @@ impl FeedAggregator {
             "wsj" => self.news_client.wsj().fetch_topic(topic).await,
             "nasdaq" => self.news_client.nasdaq().fetch_topic(topic).await,
             "cnn" => self.news_client.cnn_finance().fetch_topic(topic).await,
-            _ => return Err(FeedError::ConfigurationError(format!("Unknown source: {}", source_id))),
-        }.map_err(|e| FeedError::NetworkError(format!("{} error ({}): {}", source_name, topic, e)))?;
+            _ => {
+                return Err(FeedError::ConfigurationError(format!(
+                    "Unknown source: {}",
+                    source_id
+                )))
+            }
+        }
+        .map_err(|e| {
+            FeedError::NetworkError(format!("{} error ({}): {}", source_name, topic, e))
+        })?;
 
         log::info!(
             "Fetched {} articles from {} ({})",
@@ -264,7 +303,8 @@ impl FeedAggregator {
         log::info!("Fetching custom feed: {} ({})", source_name, url);
 
         // Use the generic source to fetch any RSS/Atom feed
-        let news_articles = self.news_client
+        let news_articles = self
+            .news_client
             .generic()
             .fetch_feed_by_url(url)
             .await
@@ -298,7 +338,10 @@ impl FeedAggregator {
     }
 
     /// Refresh all feeds using configuration
-    pub async fn refresh_all_feeds_with_config(&mut self, config: &crate::models::AppConfig) -> Result<FetchResult, FeedError> {
+    pub async fn refresh_all_feeds_with_config(
+        &mut self,
+        config: &crate::models::AppConfig,
+    ) -> Result<FetchResult, FeedError> {
         self.fetch_all_news_with_config(config).await
     }
 
@@ -336,6 +379,14 @@ impl FeedAggregator {
             trimmed.replace(" EDT", " -0400")
         } else if trimmed.ends_with(" PDT") {
             trimmed.replace(" PDT", " -0700")
+        } else if trimmed.ends_with(" CST") {
+            trimmed.replace(" CST", " -0600")
+        } else if trimmed.ends_with(" CDT") {
+            trimmed.replace(" CDT", " -0500")
+        } else if trimmed.ends_with(" MST") {
+            trimmed.replace(" MST", " -0700")
+        } else if trimmed.ends_with(" MDT") {
+            trimmed.replace(" MDT", " -0600")
         } else {
             trimmed.to_string()
         };
@@ -347,6 +398,28 @@ impl FeedAggregator {
             }
         }
 
+        // Try additional common formats
+        use chrono::NaiveDateTime;
+
+        // ISO 8601 without timezone (assume UTC)
+        if let Ok(dt) = NaiveDateTime::parse_from_str(trimmed, "%Y-%m-%dT%H:%M:%S") {
+            return Some(DateTime::from_naive_utc_and_offset(dt, Utc));
+        }
+
+        // ISO 8601 with milliseconds but no timezone
+        if let Ok(dt) = NaiveDateTime::parse_from_str(trimmed, "%Y-%m-%dT%H:%M:%S%.f") {
+            return Some(DateTime::from_naive_utc_and_offset(dt, Utc));
+        }
+
+        // Common date-only format (assume midnight UTC)
+        if let Ok(date) = chrono::NaiveDate::parse_from_str(trimmed, "%Y-%m-%d") {
+            if let Some(dt) = date.and_hms_opt(0, 0, 0) {
+                return Some(DateTime::from_naive_utc_and_offset(dt, Utc));
+            }
+        }
+
+        // Log only if we couldn't parse the date
+        log::warn!("Failed to parse date: '{}'", date_str);
         None
     }
 

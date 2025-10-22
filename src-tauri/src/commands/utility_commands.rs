@@ -17,12 +17,14 @@ pub async fn open_url_in_browser(url: String) -> Result<(), String> {
     // Use system command to open URL in default browser
     #[cfg(target_os = "linux")]
     let result = Command::new("xdg-open").arg(&valid_url).spawn();
-    
+
     #[cfg(target_os = "macos")]
     let result = Command::new("open").arg(&valid_url).spawn();
-    
+
     #[cfg(target_os = "windows")]
-    let result = Command::new("cmd").args(&["/C", "start", &valid_url]).spawn();
+    let result = Command::new("cmd")
+        .args(&["/C", "start", &valid_url])
+        .spawn();
 
     match result {
         Ok(_) => Ok(()),

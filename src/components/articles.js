@@ -329,20 +329,23 @@ class ArticleManager {
     // Utility function to get time ago string - teletext style
     getTimeAgo(date) {
         const now = new Date();
-        const diffMs = now - new Date(date);
-        const diffMins = Math.floor(diffMs / (1000 * 60));
-        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        const articleDate = new Date(date);
+        
+        // Check if article is from today
+        const isToday = now.toDateString() === articleDate.toDateString();
+        
+        if (isToday) {
+            // Show relative time for today's articles
+            const diffMs = now - articleDate;
+            const diffMins = Math.floor(diffMs / (1000 * 60));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
 
-        if (diffMins < 1) return 'NOW';
-        if (diffMins < 60) return `${diffMins}M`;
-        if (diffHours < 24) return `${diffHours}H`;
-        if (diffDays < 7) return `${diffDays}D`;
-
-        return new Date(date).toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: '2-digit'
-        }).replace('/', '/');
+            if (diffMins < 1) return 'NOW';
+            if (diffMins < 60) return `${diffMins}M`;
+            return `${diffHours}H`;
+        }
+        
+        return articleDate.toLocaleString('en-US');
     }
 
     // Refresh articles

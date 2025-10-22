@@ -1,6 +1,6 @@
+use crate::feed_aggregator::FeedAggregator;
 use crate::models::{AppConfig, CustomFeedConfig};
 use crate::services::ConfigurationService;
-use crate::feed_aggregator::FeedAggregator;
 use tauri::AppHandle;
 
 /// Tauri commands for configuration management
@@ -28,7 +28,7 @@ pub async fn delete_config_file(app_handle: AppHandle) -> Result<String, String>
     let service = ConfigurationService::new(&app_handle)?;
     let config_dir = service.get_config_directory();
     let config_file = std::path::Path::new(&config_dir).join("config.json");
-    
+
     if config_file.exists() {
         std::fs::remove_file(&config_file)
             .map_err(|e| format!("Failed to delete config file: {}", e))?;
@@ -54,7 +54,10 @@ pub async fn get_config_directory(app_handle: AppHandle) -> Result<String, Strin
 pub async fn get_config_file_path(app_handle: AppHandle) -> Result<String, String> {
     use crate::config::ConfigManager;
     let config_manager = ConfigManager::new(&app_handle)?;
-    Ok(config_manager.get_config_file().to_string_lossy().to_string())
+    Ok(config_manager
+        .get_config_file()
+        .to_string_lossy()
+        .to_string())
 }
 
 #[tauri::command]
@@ -69,15 +72,23 @@ pub async fn update_source_topics(
     enabled_topics: Vec<String>,
     app_handle: AppHandle,
 ) -> Result<(), String> {
-    log::info!("Updating topics for source '{}': {:?}", source_id, enabled_topics);
-    
+    log::info!(
+        "Updating topics for source '{}': {:?}",
+        source_id,
+        enabled_topics
+    );
+
     let service = ConfigurationService::new(&app_handle)?;
     let mut config = service.get_app_config()?;
-    
+
     // Find and update the source
     if let Some(source) = config.feed_sources.iter_mut().find(|s| s.id == source_id) {
-        log::info!("Found source '{}', updating topics from {:?} to {:?}", 
-                   source.name, source.enabled_topics, enabled_topics);
+        log::info!(
+            "Found source '{}', updating topics from {:?} to {:?}",
+            source.name,
+            source.enabled_topics,
+            enabled_topics
+        );
         source.enabled_topics = enabled_topics;
         service.update_app_config(config)?;
         log::info!("Successfully updated topics for source '{}'", source_id);
@@ -96,15 +107,15 @@ pub async fn add_custom_feed(
 ) -> Result<String, String> {
     let service = ConfigurationService::new(&app_handle)?;
     let mut config = service.get_app_config()?;
-    
+
     // Generate ID from name
     let id = format!("custom_{}", name.to_lowercase().replace(" ", "_"));
-    
+
     // Check if ID already exists
     if config.custom_feeds.iter().any(|f| f.id == id) {
         return Err("A feed with this name already exists".to_string());
     }
-    
+
     let custom_feed = CustomFeedConfig {
         id: id.clone(),
         name,
@@ -112,10 +123,10 @@ pub async fn add_custom_feed(
         enabled: true,
         last_fetched: None,
     };
-    
+
     config.custom_feeds.push(custom_feed);
     service.update_app_config(config)?;
-    
+
     Ok(id)
 }
 
@@ -128,7 +139,7 @@ pub async fn update_custom_feed(
 ) -> Result<(), String> {
     let service = ConfigurationService::new(&app_handle)?;
     let mut config = service.get_app_config()?;
-    
+
     if let Some(feed) = config.custom_feeds.iter_mut().find(|f| f.id == id) {
         feed.name = name;
         feed.url = url;
@@ -140,16 +151,13 @@ pub async fn update_custom_feed(
 }
 
 #[tauri::command]
-pub async fn delete_custom_feed(
-    app_handle: AppHandle,
-    id: String,
-) -> Result<(), String> {
+pub async fn delete_custom_feed(app_handle: AppHandle, id: String) -> Result<(), String> {
     let service = ConfigurationService::new(&app_handle)?;
     let mut config = service.get_app_config()?;
-    
+
     config.custom_feeds.retain(|f| f.id != id);
     service.update_app_config(config)?;
-    
+
     Ok(())
 }
 
@@ -161,7 +169,7 @@ pub async fn toggle_custom_feed(
 ) -> Result<(), String> {
     let service = ConfigurationService::new(&app_handle)?;
     let mut config = service.get_app_config()?;
-    
+
     if let Some(feed) = config.custom_feeds.iter_mut().find(|f| f.id == id) {
         feed.enabled = enabled;
         service.update_app_config(config)?;
