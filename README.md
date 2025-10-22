@@ -1,45 +1,66 @@
 # Sfeedo - Desktop Feed Reader
 
-A modern RSS/Atom feed aggregator built with Tauri, Rust, and JavaScript. Sfeedo provides a clean, fast, and native desktop experience for managing and reading your favorite feeds.
+A modern RSS/Atom feed aggregator built with Tauri, Rust, and JavaScript. Fast, lightweight, and native desktop experience for managing your feeds.
 
 ## Features
 
-- 📰 RSS/Atom feed aggregation
-- 🖥️ Native desktop application (Windows, macOS, Linux)
-- ⚡ Fast and lightweight Rust backend
-- 🎨 Modern web-based frontend
-- 📄 JSON-based configuration storage
-- 🔄 Automatic feed refresh management
-- 📱 Cross-platform compatibility
+- RSS/Atom feed aggregation
+- Native desktop application (Windows, macOS, Linux)
+- Fast Rust backend with modern web frontend
+- Automatic feed refresh management
+- Cross-platform compatibility
 
-## Quick Start
+## Installation
 
-### Prerequisites Check
-Run the setup verification script to ensure your environment is ready:
+**Note**: Sfeedo is not a signed application. Your operating system may show a security warning on first launch. You'll need to allow the application to run in your system settings.
+
+### Windows
+Download and run the `.msi` installer from the [releases page](https://github.com/codingthings-com/sfeedo/releases).
+
+On first launch, Windows may show "Windows protected your PC". Click "More info" and then "Run anyway".
+
+### macOS
+Download the `.dmg` file from the [releases page](https://github.com/codingthings-com/sfeedo/releases), open it, and drag Sfeedo to your Applications folder.
+
+On first launch, macOS will block the app. Go to System Settings > Privacy & Security and click "Open Anyway" next to the Sfeedo message.
+
+### Linux
+Download the appropriate package for your distribution:
+- **Debian/Ubuntu**: `.deb` package
+- **AppImage**: Universal Linux package (no installation required)
+
+```bash
+# Debian/Ubuntu
+sudo dpkg -i sfeedo_*.deb
+
+# AppImage
+chmod +x sfeedo_*.AppImage
+./sfeedo_*.AppImage
+```
+
+## Development
+
+### Prerequisites
+Run the setup verification script:
 ```bash
 ./setup-check.sh
 ```
 
-### Development
+For detailed setup instructions, see:
+- **macOS**: [README-DEV-MACOS.md](README-DEV-MACOS.md)
+- **Linux**: [README-DEV-LINUX.md](README-DEV-LINUX.md)
+
+### Quick Start
 ```bash
-# Install dependencies (if not already done)
+# Install dependencies
 npm install
 
 # Start development server
 npm run tauri dev
-```
 
-### Build for Production
-```bash
+# Build for production
 npm run tauri build
 ```
-
-## Development Environment Setup
-
-Choose your operating system for detailed setup instructions:
-
-- **macOS**: See [README-DEV-MACOS.md](README-DEV-MACOS.md)
-- **Linux**: See [README-DEV-LINUX.md](README-DEV-LINUX.md)
 
 ## Project Structure
 
@@ -67,89 +88,24 @@ sfeedo/
 
 ## Technology Stack
 
-### Frontend
-- **Vite** - Fast build tool and development server
-- **JavaScript** - Core frontend logic
-- **HTML/CSS** - User interface
-
-### Backend
-- **Rust** - High-performance system programming language
-- **Tauri** - Framework for building desktop apps with web technologies
-- **JSON** - Configuration and feed source storage
-- **Tokio** - Asynchronous runtime for Rust
-
-### Key Dependencies
-- `@tauri-apps/api` - Tauri JavaScript API
-- `finance-news-aggregator-rs` - RSS/Atom feed parsing
-- `reqwest` - HTTP client for Rust
-- `chrono` - Date and time handling
-- `serde` - Serialization framework
-
-## Available Scripts
-
-```bash
-# Development
-npm run dev          # Start Vite development server only
-npm run tauri dev    # Start full Tauri development environment
-
-# Building
-npm run build        # Build frontend assets
-npm run tauri build  # Build complete desktop application
-
-# Preview
-npm run preview      # Preview built frontend assets
-```
+- **Frontend**: Vite, JavaScript, HTML/CSS
+- **Backend**: Rust, Tauri, Tokio
+- **Feed Parsing**: finance-news-aggregator-rs
+- **Storage**: JSON-based configuration
 
 ## Configuration
 
-### Tauri Configuration
-Main configuration is in `src-tauri/tauri.conf.json`:
-- App metadata (name, version, identifier)
-- Build settings (frontend dist path, dev URL)
-- Bundle configuration for different platforms
-
-### Vite Configuration
-Frontend build configuration in `vite.config.js`:
-- Development server settings
-- Build optimization
-- Platform-specific targets
-
-## Development Workflow
-
-1. **Start Development**: `npm run tauri dev`
-   - Launches Vite dev server on http://localhost:5173
-   - Compiles and runs Rust backend
-   - Opens desktop application window
-
-2. **Make Changes**:
-   - Frontend changes auto-reload via Vite HMR
-   - Rust changes require restart of dev command
-
-3. **Test Build**: `npm run tauri build`
-   - Creates optimized production build
-   - Generates platform-specific installers
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Environment Setup**: Run `./setup-check.sh` to verify all dependencies
-2. **Build Failures**: Check that all system dependencies are installed
-3. **Port Conflicts**: Vite uses port 5173 by default (configurable in vite.config.js)
-
-### Getting Help
-
-1. Check the platform-specific README files for detailed setup instructions
-2. Verify your environment with the setup check script
-3. Ensure all dependencies are up to date
+Configuration file location:
+- **macOS**: `~/Library/Application Support/com.codingthings.sfeedo/config.json`
+- **Linux**: `~/.config/com.codingthings.sfeedo/config.json`
+- **Windows**: `%APPDATA%\com.codingthings.sfeedo\config.json`
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Test thoroughly on your target platform(s)
-5. Submit a pull request
+3. Test on your target platform(s)
+4. Submit a pull request
 
 ## License
 
@@ -157,19 +113,4 @@ See the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
-- Built with [Tauri](https://tauri.app/) framework
-- Uses [finance-news-aggregator-rs](https://crates.io/crates/finance-news-aggregator-rs) for feed parsing
-- Powered by [Rust](https://www.rust-lang.org/) and [Vite](https://vitejs.dev/)
-
-
-## Notes
-
-
-```bash
-~/Library/Application\ Support/com.codingthings.sfeedo/config.json
-
-
-# or 
-
-~/.config/.... 
-```
+Built with [Tauri](https://tauri.app/), [Rust](https://www.rust-lang.org/), and [Vite](https://vitejs.dev/).
