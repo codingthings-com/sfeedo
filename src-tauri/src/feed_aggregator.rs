@@ -230,8 +230,21 @@ impl FeedAggregator {
 
         let duration = start_time.elapsed();
 
+        // Deduplicate articles by URL to ensure uniqueness
+        let original_count = all_articles.len();
+        all_articles = Self::deduplicate_articles_by_url(all_articles);
+        let deduplicated_count = all_articles.len();
+
+        if original_count != deduplicated_count {
+            log::info!(
+                "Deduplicated {} articles (removed {} duplicates based on URL)",
+                deduplicated_count,
+                original_count - deduplicated_count
+            );
+        }
+
         log::info!(
-            "Fetch completed in {:?}. Success: {}, Failed: {}, Total articles: {}",
+            "Fetch completed in {:?}. Success: {}, Failed: {}, Total articles: {} (after deduplication)",
             duration,
             successful_sources.len(),
             failed_sources.len(),
@@ -494,6 +507,34 @@ impl FeedAggregator {
 
         let hash = hasher.finish();
         format!("{}_{:x}", source_id, hash)
+    }
+
+    /// Deduplicate articles by URL, keeping the first occurrence of each unique URL
+    fn deduplicate_articles_by_url(articles: Vec<Article>) -> Vec<Article> {
+        use std::collections::HashSet;
+        
+        let mut seen_urls = HashSet::new();
+        let mut deduplicated = Vec::new();
+        
+        for article in articles {
+            // Use the article URL as the deduplication key
+            let url_key = article.url.trim().to_lowercase();
+            
+            // Skip articles with empty URLs or if we've already seen this URL
+            if url_key.is_empty() {
+                // Keep articles with empty URLs but log a warning
+                log::warn!("Article with empty URL found: {}", article.title);
+                deduplicated.push(article);
+            } else if seen_urls.insert(url_key.clone()) {
+                // First time seeing this URL, keep the article
+                deduplicated.push(article);
+            } else {
+                // Duplicate URL found, skip this article
+                log::debug!("Duplicate article URL found, skipping: {}", article.url);
+            }
+        }
+        
+        deduplicated
     }
 }
 

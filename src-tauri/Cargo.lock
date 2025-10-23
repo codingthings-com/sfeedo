@@ -3618,7 +3618,7 @@ dependencies = [
 
 [[package]]
 name = "sfeedo"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "chrono",
  "env_logger 0.10.2",

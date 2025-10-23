@@ -1,6 +1,6 @@
 {
   "productName": "sfeedo",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "identifier": "com.codingthings.sfeedo",
   "build": {
     "frontendDist": "../dist",
