@@ -46,9 +46,9 @@ MAJOR=${VERSION_PARTS[0]}
 MINOR=${VERSION_PARTS[1]}
 PATCH=${VERSION_PARTS[2]}
 
-# Increment minor version, reset patch to 0
-NEW_MINOR=$((MINOR + 1))
-NEW_VERSION="$MAJOR.$NEW_MINOR.0"
+# Increment patch version
+NEW_PATCH=$((PATCH + 1))
+NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
 
 print_status "New version: $NEW_VERSION"
 
