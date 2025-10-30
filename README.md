@@ -17,12 +17,12 @@ An RSS/Atom reader built with Tauri, Rust, and JavaScript. Fast, lightweight, an
 ### Windows
 Download and run the `.msi` installer from the [releases page](https://github.com/codingthings-com/sfeedo/releases).
 
-On first launch, Windows may show "Windows protected your PC". Click "More info" and then "Run anyway".
+On first launch, Windows may show "Windows protected your PC". Click "More info" and then **"Run anyway"**.
 
 ### macOS
 Download the `.dmg` file from the [releases page](https://github.com/codingthings-com/sfeedo/releases), open it, and drag Sfeedo to your Applications folder.
 
-On first launch, macOS will block the app. Go to System Settings > Privacy & Security and click "Open Anyway" next to the Sfeedo message.
+On first launch, macOS will block the app. Go to System Settings > Privacy & Security and click **"Open Anyway"** next to the Sfeedo message.
 
 ### Linux
 Download the appropriate package for your distribution:
@@ -91,7 +91,6 @@ sfeedo/
 - **Frontend**: Vite, JavaScript, HTML/CSS
 - **Backend**: Rust, Tauri, Tokio
 - **Feed Parsing**: finance-news-aggregator-rs
-- **Storage**: JSON-based configuration
 
 ## Configuration
 
