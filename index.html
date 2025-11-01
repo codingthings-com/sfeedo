@@ -16,14 +16,20 @@
             </div>
             <div class="teletext-nav">
                 <button class="teletext-nav-btn active" data-view="articles">
-                    100 NEWS
+                    100 FEED
                 </button>
                 <button class="teletext-nav-btn" data-view="settings">
                     200 SETUP
                 </button>
-                <button id="refresh-btn" class="teletext-refresh-btn">
-                    REFRESH
-                </button>
+                <div class="teletext-nav-controls">
+                    <div class="teletext-sort-controls">
+                        <button id="sort-up-btn" class="teletext-sort-btn active" data-sort="newest">▲</button>
+                        <button id="sort-down-btn" class="teletext-sort-btn" data-sort="oldest">▼</button>
+                    </div>
+                    <button id="refresh-btn" class="teletext-refresh-btn">
+                        R
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -31,15 +37,6 @@
         <main class="teletext-main">
             <!-- Articles view -->
             <div id="articles-view" class="teletext-view active">
-                <div class="teletext-view-header">
-                    <div class="teletext-header-line">
-                        <span class="teletext-section-title">FINANCIAL NEWS</span>
-                        <div class="teletext-sort-controls">
-                            <button id="sort-up-btn" class="teletext-sort-btn active" data-sort="newest">▲</button>
-                            <button id="sort-down-btn" class="teletext-sort-btn" data-sort="oldest">▼</button>
-                        </div>
-                    </div>
-                </div>
                 <div id="articles-container" class="teletext-articles">
                     <!-- Articles will be loaded here -->
                 </div>
@@ -70,7 +67,7 @@
                 <span id="status-text" class="teletext-status-text">READY</span>
                 <div class="teletext-status-indicators">
                     <span id="auto-refresh-indicator" class="teletext-indicator hidden">AUTO: ON</span>
-                    <span id="last-update" class="teletext-last-update">NEVER UPDATED</span>
+                    <span id="last-update" class="teletext-last-update">NO UPDATES</span>
                 </div>
             </div>
         </footer>

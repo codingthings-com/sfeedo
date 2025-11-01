@@ -9,6 +9,8 @@ pub struct AppConfig {
     pub feed_sources: Vec<FeedSourceConfig>,
     #[serde(default)]
     pub custom_feeds: Vec<CustomFeedConfig>,
+    #[serde(default)]
+    pub window_state: WindowState,
 }
 
 /// Feed source configuration (built-in sources)
@@ -45,6 +47,26 @@ pub struct UiConfig {
     pub show_notifications: bool,
 }
 
+/// Window state configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WindowState {
+    pub x: Option<i32>,
+    pub y: Option<i32>,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+}
+
+impl Default for WindowState {
+    fn default() -> Self {
+        Self {
+            x: None,
+            y: None,
+            width: Some(400),
+            height: Some(1000),
+        }
+    }
+}
+
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
@@ -55,6 +77,7 @@ impl Default for AppConfig {
             ui: UiConfig {
                 show_notifications: true,
             },
+            window_state: WindowState::default(),
             feed_sources: vec![
                 FeedSourceConfig {
                     id: "yahoo".to_string(),
@@ -102,7 +125,7 @@ impl Default for AppConfig {
                     id: "cnn".to_string(),
                     name: "CNN Finance".to_string(),
                     enabled: true,
-                    enabled_topics: vec!["markets".to_string()],
+                    enabled_topics: vec!["money_latest".to_string()],
                     last_fetched: None,
                 },
             ],

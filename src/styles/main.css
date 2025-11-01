@@ -59,6 +59,14 @@ body {
     background: #000;
     gap: 16px;
     align-items: center;
+    justify-content: space-between;
+}
+
+.teletext-nav-controls {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-left: auto;
 }
 
 .teletext-nav-btn,
@@ -87,8 +95,15 @@ body {
 }
 
 .teletext-refresh-btn {
-    margin-left: auto;
     color: #ff00ff;
+    font-size: 16px;
+    padding: 4px 8px;
+    border: 1px solid #ff00ff;
+    width: 32px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .teletext-refresh-btn:hover {
@@ -126,6 +141,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 16px;
 }
 
 .teletext-section-title {
@@ -137,7 +153,7 @@ body {
 
 .teletext-sort-controls {
     display: flex;
-    gap: 8px;
+    gap: 4px;
 }
 
 .teletext-sort-btn {
@@ -145,12 +161,12 @@ body {
     border: 1px solid #00ff00;
     color: #00ff00;
     font-family: inherit;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: bold;
     cursor: pointer;
     padding: 4px 8px;
     width: 32px;
-    height: 24px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -700,6 +716,18 @@ input:checked+.teletext-toggle-slider:before {
     display: none !important;
 }
 
+/* Links */
+.teletext-link {
+    color: #00ffff;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.teletext-link:hover {
+    color: #ffff00;
+    text-decoration: none;
+}
+
 /* Accessibility improvements */
 .teletext-nav-btn:focus,
 .teletext-btn:focus,
@@ -797,16 +825,6 @@ Additional teletext settings styles */
 
 /* Additional responsive adjustments */
 @media (max-width: 480px) {
-    .teletext-header-line {
-        flex-direction: column;
-        gap: 8px;
-        align-items: flex-start;
-    }
-
-    .teletext-sort-controls {
-        align-self: flex-end;
-    }
-
     .teletext-setting-item {
         flex-direction: column;
         gap: 8px;

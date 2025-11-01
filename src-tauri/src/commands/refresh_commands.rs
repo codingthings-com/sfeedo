@@ -131,14 +131,7 @@ pub async fn get_refresh_status(app_handle: AppHandle) -> Result<SimpleRefreshSt
     Ok(SimpleRefreshStatus {
         is_refreshing: false,    // Would be tracked by a global state manager
         last_refresh_time: None, // Could be stored in config
-        message: if config.auto_refresh.enabled {
-            Some(format!(
-                "Auto-refresh enabled (every {} minutes)",
-                config.auto_refresh.interval_minutes
-            ))
-        } else {
-            Some("Auto-refresh disabled".to_string())
-        },
+        message: None,
     })
 }
 

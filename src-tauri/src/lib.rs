@@ -38,13 +38,15 @@ pub fn run() {
             update_custom_feed,
             delete_custom_feed,
             toggle_custom_feed,
-            get_available_topics
+            get_available_topics,
+            save_window_state,
+            get_window_state
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
-                        .level(log::LevelFilter::Info)
+                        .level(log::LevelFilter::Warn)
                         .build(),
                 )?;
             }
@@ -54,6 +56,11 @@ pub fn run() {
                 log::error!("Failed to initialize configuration service: {}", e);
                 e
             })?;
+
+            // Restore window state
+            if let Err(e) = commands::window_commands::restore_window_state(&app.handle()) {
+                log::warn!("Failed to restore window state: {}", e);
+            }
 
             Ok(())
         })

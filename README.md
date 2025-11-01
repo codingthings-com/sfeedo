@@ -1,14 +1,13 @@
-# Sfeedo - Desktop RSS Reader
+# Sfeedo - Desktop FEED Reader
 
-An RSS/Atom reader built with Tauri, Rust, and JavaScript. Fast, lightweight, and native desktop experience for managing your feeds.
+An RSS/Atom feed reader built with Tauri, Rust, and JavaScript.
 
 ## Features
 
 - RSS/Atom feed aggregation
 - Native desktop application (Windows, macOS, Linux)
 - Fast Rust backend with modern web frontend
-- Automatic feed refresh management
-- Cross-platform compatibility
+
 
 ## Installation
 
@@ -90,7 +89,8 @@ sfeedo/
 
 - **Frontend**: Vite, JavaScript, HTML/CSS
 - **Backend**: Rust, Tauri, Tokio
-- **Feed Parsing**: finance-news-aggregator-rs
+- **Feed Parsing**: [finance-news-aggregator-rs](https://crates.io/crates/finance-news-aggregator-rs)
+- **Storage**: JSON-based configuration
 
 ## Configuration
 

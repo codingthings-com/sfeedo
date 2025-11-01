@@ -121,7 +121,7 @@ class SettingsManager {
         <div class="teletext-setting-info">
           <label class="teletext-setting-label">${this.escapeHtml(source.name).toUpperCase()}</label>
           <p class="teletext-setting-description">
-            ${source.enabled ? '[ACTIVE]' : '[DISABLED]'} - BUILT-IN SCRAPER
+            ${source.enabled ? '[ACTIVE]' : '[DISABLED]'} - BUILT-IN READER
           </p>
           ${source.available_topics && source.available_topics.length > 0 ? `
             <div class="teletext-topics-list">
@@ -169,20 +169,6 @@ class SettingsManager {
     return `
       <div class="teletext-settings-section">
         <div class="teletext-section-header">
-          <h3 class="teletext-section-title">BUILT-IN NEWS SOURCES</h3>
-        </div>
-        <div class="teletext-section-content">
-          <p class="teletext-section-description">
-            MANAGE BUILT-IN NEWS SCRAPERS. SELECT TOPICS FOR EACH SOURCE.
-          </p>
-          <div class="teletext-feed-sources-list">
-            ${builtinSourcesHTML}
-          </div>
-        </div>
-      </div>
-      
-      <div class="teletext-settings-section">
-        <div class="teletext-section-header">
           <h3 class="teletext-section-title">CUSTOM RSS/ATOM FEEDS</h3>
         </div>
         <div class="teletext-section-content">
@@ -194,6 +180,20 @@ class SettingsManager {
           </button>
           <div class="teletext-feed-sources-list">
             ${customSourcesHTML}
+          </div>
+        </div>
+      </div>
+
+      <div class="teletext-settings-section">
+        <div class="teletext-section-header">
+          <h3 class="teletext-section-title">BUILT-IN FEEDS</h3>
+        </div>
+        <div class="teletext-section-content">
+          <p class="teletext-section-description">
+            SELECT TOPICS FOR EACH SOURCE.
+          </p>
+          <div class="teletext-feed-sources-list">
+            ${builtinSourcesHTML}
           </div>
         </div>
       </div>
@@ -317,9 +317,8 @@ class SettingsManager {
             <div class="teletext-setting-item">
               <div class="teletext-setting-info">
                 <label class="teletext-setting-label">SFEEDO DESKTOP FEED READER</label>
-                <p class="teletext-setting-description">VERSION 0.1.0</p>
-                <p class="teletext-setting-description">RSS/ATOM FEED AGGREGATOR BUILT WITH TAURI AND RUST</p>
-                <p class="teletext-setting-description">POWERED BY FINANCE-NEWS-AGGREGATOR-RS</p>
+                <p class="teletext-setting-description">VERSION 0.1</p>
+                <p class="teletext-setting-description">POWERED BY <a href="https://crates.io/crates/finance-news-aggregator-rs" target="_blank" class="teletext-link">FINANCE-NEWS-AGGREGATOR-RS</a></p>
               </div>
             </div>
           </div>

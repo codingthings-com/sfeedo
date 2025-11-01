@@ -67,23 +67,22 @@ class RefreshManager {
       const result = await TauriAPI.refresh.refreshFeeds();
       
       if (result.success) {
-        const message = result.new_articles > 0 
-          ? `REFRESH COMPLETE - ${result.new_articles} NEW ARTICLES`
-          : 'REFRESH COMPLETE - NO NEW ARTICLES';
-        
         // Reload articles silently (without showing loading overlay)
         if (window.articleManager) {
           await window.articleManager.loadArticles(true); // Pass true for silent reload
+          // Get article count from article manager
+          const articleCount = window.articleManager.articles?.length || 0;
+          this.completeRefresh(`LOADED ${articleCount} ARTICLES`);
+        } else {
+          this.completeRefresh(`LOADED ${result.new_articles || 0} ARTICLES`);
         }
-        
-        this.completeRefresh(message);
       } else {
-        this.completeRefresh((result.message || 'REFRESH FAILED').toUpperCase(), true);
+        this.completeRefresh('ERROR', true);
       }
       
     } catch (error) {
       // console.error('Refresh failed:', error);
-      this.completeRefresh('REFRESH FAILED', true);
+      this.completeRefresh('ERROR', true);
       this.showError('FAILED TO REFRESH FEEDS. CHECK INTERNET CONNECTION.');
     }
   }
@@ -107,7 +106,7 @@ class RefreshManager {
   }
 
   // Complete refresh process
-  completeRefresh(message = 'REFRESH COMPLETE', isError = false) {
+  completeRefresh(message = 'LOADED 0 ARTICLES', isError = false) {
     this.isRefreshing = false;
     this.refreshProgress = 100;
     this.lastRefreshTime = new Date();
@@ -120,11 +119,6 @@ class RefreshManager {
     this.setRefreshButtonState(false);
     this.hideProgressOverlay();
     this.updateLastRefreshDisplay();
-    
-    // Show notification if enabled
-    if (!isError) {
-      this.showRefreshNotification();
-    }
     
     // Dispatch event
     this.dispatchRefreshEvent('complete', { success: !isError });
@@ -217,8 +211,12 @@ class RefreshManager {
   updateLastRefreshDisplay() {
     if (!this.lastUpdateElement || !this.lastRefreshTime) return;
     
-    const timeString = this.lastRefreshTime.toLocaleTimeString();
-    this.lastUpdateElement.textContent = `Last updated: ${timeString}`;
+    const timeString = this.lastRefreshTime.toLocaleTimeString('en-GB', { 
+      hour12: false, 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+    this.lastUpdateElement.textContent = `${timeString}`;
   }
 
   // Show refresh notification
@@ -327,23 +325,22 @@ class RefreshManager {
       const result = await TauriAPI.refresh.refreshFeeds();
       
       if (result.success) {
-        const message = result.new_articles > 0 
-          ? `Auto-refresh completed - ${result.new_articles} new articles found`
-          : 'Auto-refresh completed - no new articles';
-        
         // Reload articles silently (without showing loading overlay)
         if (window.articleManager) {
           await window.articleManager.loadArticles(true); // Pass true for silent reload
+          // Get article count from article manager
+          const articleCount = window.articleManager.articles?.length || 0;
+          this.completeRefresh(`LOADED ${articleCount} ARTICLES`);
+        } else {
+          this.completeRefresh(`LOADED ${result.new_articles || 0} ARTICLES`);
         }
-        
-        this.completeRefresh(message);
       } else {
-        this.completeRefresh(result.message || 'Auto-refresh failed', true);
+        this.completeRefresh('ERROR', true);
       }
       
     } catch (error) {
       // console.error('Auto-refresh failed:', error);
-      this.completeRefresh('Auto-refresh failed', true);
+      this.completeRefresh('ERROR', true);
     }
   }
 
@@ -367,7 +364,8 @@ class RefreshManager {
       this.autoRefreshIndicator.textContent = `AUTO: ON (${this.autoRefreshInterval}M)`;
       this.autoRefreshIndicator.classList.remove('hidden');
     } else {
-      this.autoRefreshIndicator.classList.add('hidden');
+      this.autoRefreshIndicator.textContent = `AUTO: OFF`;
+      this.autoRefreshIndicator.classList.remove('hidden');
     }
   }
 

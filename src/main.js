@@ -4,6 +4,7 @@ let isLoading = false;
 
 // Import Tauri API for external URL handling
 import { TauriAPI } from './api/tauri-api.js';
+import { initWindowStateTracking } from './window-state.js';
 
 // DOM elements
 let navButtons;
@@ -37,6 +38,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initialize the app
   updateStatus('READY');
   showView('articles');
+  
+  // Initialize window state tracking
+  initWindowStateTracking();
 });
 
 // Navigation handling
