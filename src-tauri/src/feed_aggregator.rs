@@ -42,7 +42,6 @@ impl FeedAggregator {
             "seeking_alpha" => client.seeking_alpha().available_topics(),
             "wsj" => client.wsj().available_topics(),
             "nasdaq" => client.nasdaq().available_topics(),
-            "cnn" => client.cnn_finance().available_topics(),
             _ => vec![],
         };
 
@@ -276,7 +275,6 @@ impl FeedAggregator {
             "seeking_alpha" => self.news_client.seeking_alpha().fetch_topic(topic).await,
             "wsj" => self.news_client.wsj().fetch_topic(topic).await,
             "nasdaq" => self.news_client.nasdaq().fetch_topic(topic).await,
-            "cnn" => self.news_client.cnn_finance().fetch_topic(topic).await,
             _ => {
                 return Err(FeedError::ConfigurationError(format!(
                     "Unknown source: {}",
@@ -363,7 +361,7 @@ impl FeedAggregator {
         self.fetch_all_news().await
     }
 
-    /// Parse date string using the same logic as the inspiration code
+    /// Parse date string from RSS feeds
     fn parse_date(&self, date_str: &str) -> Option<DateTime<Utc>> {
         if date_str.is_empty() {
             return None;
@@ -431,8 +429,6 @@ impl FeedAggregator {
             }
         }
 
-        // Log only if we couldn't parse the date
-        log::warn!("Failed to parse date: '{}'", date_str);
         None
     }
 
@@ -451,7 +447,14 @@ impl FeedAggregator {
         let summary = news_article.description.map(|s| s.trim().to_string());
         let content = None; // ExternalNewsArticle doesn't have a content field
 
-        // Parse published date using the same logic as feed.rs.example
+        // Debug log to check for title truncation like in the example
+        if title.is_empty() {
+            log::warn!("Empty title found for article from {}", source_id);
+        } else if title.len() < 10 {
+            log::warn!("Very short title from {}: '{}'", source_id, title);
+        }
+
+        // Parse published date
         let published_at = if let Some(pub_date) = news_article.pub_date {
             self.parse_date(&pub_date)
                 .map(|dt| dt.to_rfc3339())
@@ -459,13 +462,6 @@ impl FeedAggregator {
         } else {
             chrono::Utc::now().to_rfc3339()
         };
-
-        // Debug log to check for title truncation like in the example
-        if title.is_empty() {
-            log::warn!("Empty title found for article from {}", source_id);
-        } else if title.len() < 10 {
-            log::warn!("Very short title from {}: '{}'", source_id, title);
-        }
 
         let article = Article::new(
             article_id,

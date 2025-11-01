@@ -60,8 +60,18 @@ impl ConfigManager {
         let content = fs::read_to_string(&self.config_file)
             .map_err(|e| format!("Failed to read config file: {}", e))?;
 
-        let config: AppConfig = serde_json::from_str(&content)
+        let mut config: AppConfig = serde_json::from_str(&content)
             .map_err(|e| format!("Failed to parse config JSON: {}", e))?;
+
+        // Migration: Remove CNN from feed sources if it exists
+        let original_count = config.feed_sources.len();
+        config.feed_sources.retain(|source| source.id != "cnn");
+        
+        if config.feed_sources.len() < original_count {
+            log::info!("Migrated config: removed CNN feed source");
+            // Save the migrated config
+            self.save_config(&config)?;
+        }
 
         // Validate the loaded configuration
         config.validate()?;

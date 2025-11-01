@@ -121,13 +121,6 @@ impl Default for AppConfig {
                     enabled_topics: vec!["stocks".to_string()],
                     last_fetched: None,
                 },
-                FeedSourceConfig {
-                    id: "cnn".to_string(),
-                    name: "CNN Finance".to_string(),
-                    enabled: true,
-                    enabled_topics: vec!["money_latest".to_string()],
-                    last_fetched: None,
-                },
             ],
             custom_feeds: vec![],
         }
