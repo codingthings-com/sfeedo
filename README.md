@@ -1,4 +1,4 @@
-# Sfeedo - Desktop FEED Reader
+# Sfeedo - Desktop Feed Reader
 
 An RSS/Atom feed reader built with Tauri, Rust, and JavaScript.
 
