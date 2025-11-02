@@ -2,9 +2,15 @@
 
 An RSS/Atom feed reader built with Tauri, Rust, and JavaScript.
 
+## Screenshots
+
+| Main Interface | Settings |
+|---|---|
+| ![Sfeedo Main Interface](assets/sfeedo.png) | ![Sfeedo Settings](assets/sfeedo-settings.png) |
+
 ## Features
 
-- RSS/Atom feed aggregation
+- RSS/Atom feed fetch
 - Native desktop application (Windows, macOS, Linux)
 - Fast Rust backend with modern web frontend
 
