@@ -1,6 +1,6 @@
 {
   "name": "sfeedo",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Desktop Feed Reader - A modern RSS/Atom feed aggregator",
   "type": "module",
   "main": "src/main.js",
