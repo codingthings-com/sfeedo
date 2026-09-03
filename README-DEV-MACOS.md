@@ -124,12 +124,17 @@ npx tauri info
 
 # Clean build artifacts
 cargo clean
-rm -rf node_modules
+rm -rf node_modules package-lock.json
 npm install
 
 # Update dependencies
 cargo update
 npm update
+
+# Note on Vite updates:
+# Sfeedo currently uses Vite 7.x due to target compatibility (safari13/esbuild).
+# If updating Vite, use:
+npm install -D vite@^7.3.6
 ```
 
 ## IDE Setup
