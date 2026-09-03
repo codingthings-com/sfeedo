@@ -84,9 +84,13 @@ done
 sed -i "s/version = \"$CURRENT_VERSION\"/version = \"$NEW_VERSION\"/" src-tauri/Cargo.toml
 print_status "Updated src-tauri/Cargo.toml"
 
+# Regenerate Cargo.lock to reflect the new version
+(cd src-tauri && cargo generate-lockfile --quiet)
+print_status "Updated src-tauri/Cargo.lock"
+
 # Git operations
 print_status "Adding files to git..."
-git add package.json src-tauri/tauri.conf.json src-tauri/tauri.conf.json.* src-tauri/Cargo.toml
+git add package.json src-tauri/tauri.conf.json src-tauri/tauri.conf.json.* src-tauri/Cargo.toml src-tauri/Cargo.lock
 
 print_status "Creating commit..."
 git commit -m "Release v$NEW_VERSION
