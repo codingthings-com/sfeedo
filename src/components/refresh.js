@@ -449,11 +449,6 @@ let refreshManager;
 
 document.addEventListener('DOMContentLoaded', () => {
   refreshManager = new RefreshManager();
-  
-  // Make refresh function available globally
-  window.AppNavigation.handleRefresh = () => {
-    refreshManager.forceRefresh();
-  };
 
   // Load initial configuration after a short delay
   setTimeout(() => {

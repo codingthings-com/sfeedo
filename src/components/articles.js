@@ -276,7 +276,7 @@ class ArticleManager {
         <div class="teletext-empty-icon">[ ]</div>
         <h3>NO ARTICLES FOUND</h3>
         <p>NO ARTICLES AVAILABLE. TRY REFRESHING FEEDS OR CHECK FEED SOURCES.</p>
-        <button class="teletext-btn teletext-btn-primary" onclick="window.AppNavigation.handleRefresh()">
+        <button class="teletext-btn teletext-btn-primary" onclick="if(window.refreshManager) window.refreshManager.forceRefresh()">
           REFRESH FEEDS
         </button>
       </div>
@@ -356,14 +356,22 @@ document.addEventListener('DOMContentLoaded', () => {
         window.setupSortButtons();
     }
 
-    // Show loading overlay immediately so the user never sees an empty screen
-    window.AppNavigation.showProgress('REFRESHING FEEDS...');
+    // Show loading overlay immediately via DOM so the user never sees an empty screen.
+    // We avoid showProgress() here because it sets isLoading which blocks the refresh button.
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+        overlay.classList.remove('hidden');
+        const text = overlay.querySelector('.teletext-loading-text');
+        if (text) text.textContent = 'REFRESHING FEEDS...';
+    }
 
     // Wait for refreshManager to be ready, then trigger initial refresh.
     // refreshManager is created by refresh.js which loads after articles.js,
     // so we poll until it's available.
     const waitForRefreshManager = () => {
         if (window.refreshManager) {
+            // Hide the temporary overlay — refreshManager.startRefresh() shows its own
+            if (overlay) overlay.classList.add('hidden');
             window.refreshManager.forceRefresh();
         } else {
             setTimeout(waitForRefreshManager, 50);

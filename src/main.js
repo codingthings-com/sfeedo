@@ -27,7 +27,6 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // Set up event listeners
   setupNavigation();
-  setupRefreshButton();
   setupKeyboardControls();
   
   // Set up sort buttons after a delay to ensure ArticleManager is ready
@@ -139,30 +138,6 @@ function setupKeyboardControls() {
   });
 }
 
-// Refresh button handling
-function setupRefreshButton() {
-  refreshBtn.addEventListener('click', () => {
-    if (!isLoading) {
-      handleRefresh();
-    }
-  });
-}
-
-function handleRefresh() {
-  // This will be handled by RefreshManager
-  if (window.refreshManager) {
-    window.refreshManager.forceRefresh();
-  } else {
-    // Fallback for when refresh manager isn't loaded yet
-    setLoading(true, 'REFRESHING...');
-    
-    setTimeout(() => {
-      setLoading(false);
-      updateStatus('REFRESH COMPLETE');
-      updateLastRefreshTime();
-    }, 2000);
-  }
-}
 
 // Loading state management
 function setLoading(loading, message = 'LOADING...') {
@@ -221,5 +196,4 @@ window.AppNavigation = {
   hideProgress,
   getCurrentView: () => currentView,
   isLoading: () => isLoading,
-  handleRefresh
 };
