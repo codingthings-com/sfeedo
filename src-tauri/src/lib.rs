@@ -2,22 +2,16 @@ pub mod commands;
 pub mod config;
 pub mod feed_aggregator;
 pub mod models;
-pub mod refresh_manager;
 pub mod services;
 
 use commands::*;
-use services::ConfigurationService;
+use services::AppState;
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
-            get_app_config,
-            update_app_config,
-            reset_config_to_defaults,
-            backup_configuration,
-            get_config_directory,
-            sync_configuration,
             refresh_feeds,
             get_articles,
             get_refresh_status,
@@ -51,11 +45,15 @@ pub fn run() {
                 )?;
             }
 
-            // Initialize configuration service and default feed sources
-            let _config_service = ConfigurationService::new(&app.handle()).map_err(|e| {
-                log::error!("Failed to initialize configuration service: {}", e);
-                e
-            })?;
+            // Initialize app state
+            let app_state = AppState::new(&app.handle())
+                .map_err(|e| {
+                    log::error!("Failed to initialize app state: {}", e);
+                    e
+                })
+                .unwrap(); // Or handle properly if we shouldn't crash, but typically we want to crash if we can't initialize config
+
+            app.manage(app_state);
 
             // Restore window state
             if let Err(e) = commands::window_commands::restore_window_state(&app.handle()) {

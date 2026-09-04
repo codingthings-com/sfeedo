@@ -41,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // Initialize window state tracking
   initWindowStateTracking();
+  
 });
 
 // Navigation handling

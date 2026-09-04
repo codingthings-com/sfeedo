@@ -23,67 +23,6 @@ export class ArticleAPI {
       throw new Error(`Failed to load articles: ${error}`);
     }
   }
-
-  /**
-   * Get a specific article by ID
-   * @param {string} id - Article ID
-   * @returns {Promise<Object|null>} Article object or null if not found
-   */
-  static async getArticleById(id) {
-    try {
-      return await invoke('get_article_by_id', { id });
-    } catch (error) {
-      // console.error('Failed to get article:', error);
-      throw new Error(`Failed to load article: ${error}`);
-    }
-  }
-
-
-
-  /**
-   * Search articles by query
-   * @param {string} query - Search query
-   * @param {number} limit - Maximum number of results
-   * @returns {Promise<Array>} Array of matching articles
-   */
-  static async searchArticles(query, limit = 50) {
-    try {
-      const params = { query, limit };
-      return await invoke('search_articles', { params });
-    } catch (error) {
-      // console.error('Failed to search articles:', error);
-      throw new Error(`Search failed: ${error}`);
-    }
-  }
-
-  /**
-   * Get article count with optional filtering
-   * @param {string} source_id - Optional source ID filter
-
-   * @returns {Promise<number>} Article count
-   */
-  static async getArticleCount(source_id = null) {
-    try {
-      return await invoke('get_article_count', { source_id });
-    } catch (error) {
-      // console.error('Failed to get article count:', error);
-      throw new Error(`Failed to get article count: ${error}`);
-    }
-  }
-
-  /**
-   * Delete an article
-   * @param {string} id - Article ID
-   * @returns {Promise<boolean>} Success status
-   */
-  static async deleteArticle(id) {
-    try {
-      return await invoke('delete_article', { id });
-    } catch (error) {
-      // console.error('Failed to delete article:', error);
-      throw new Error(`Failed to delete article: ${error}`);
-    }
-  }
 }
 
 /**
@@ -227,21 +166,6 @@ export class FeedSourceAPI {
     }
   }
 
-  // Note: Add/Remove feed sources not implemented - only built-in sources can be enabled/disabled
-  // /**
-  //  * Remove a feed source
-  //  * @param {string} id - Feed source ID
-  //  * @returns {Promise<boolean>} Success status
-  //  */
-  // static async removeFeedSource(id) {
-  //   try {
-  //     return await invoke('remove_feed_source_db', { id });
-  //   } catch (error) {
-  //     console.error('Failed to remove feed source:', error);
-  //     throw new Error(`Failed to remove feed source: ${error}`);
-  //   }
-  // }
-
   /**
    * Toggle feed source enabled status
    * @param {string} id - Feed source ID
@@ -257,22 +181,6 @@ export class FeedSourceAPI {
     } catch (error) {
       // console.error('Failed to toggle feed source:', error);
       throw new Error(`Failed to toggle feed source: ${error}`);
-    }
-  }
-
-  /**
-   * Validate a feed URL
-   * @param {string} url - Feed URL to validate
-   * @param {number} timeoutSeconds - Validation timeout
-   * @returns {Promise<Object>} Validation result
-   */
-  static async validateFeedSource(url, timeoutSeconds = 30) {
-    try {
-      const params = { url, timeout_seconds: timeoutSeconds };
-      return await invoke('validate_feed_source', { params });
-    } catch (error) {
-      // console.error('Failed to validate feed source:', error);
-      throw new Error(`Failed to validate feed source: ${error}`);
     }
   }
 }

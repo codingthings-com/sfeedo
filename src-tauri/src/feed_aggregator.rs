@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use finance_news_aggregator_rs::{
     news_source::NewsSource as NewsSourceTrait, NewsArticle as ExternalNewsArticle, NewsClient,
 };
-use tokio::time::{Duration, Instant};
+use tokio::time::Duration;
 
 /// Available financial news sources with topics
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -19,16 +19,12 @@ pub struct NewsSource {
 }
 
 /// Feed aggregation service that fetches and processes news from financial sources
-pub struct FeedAggregator {
-    news_client: NewsClient,
-}
+pub struct FeedAggregator {}
 
 impl FeedAggregator {
     /// Create a new FeedAggregator instance
     pub fn new() -> Self {
-        let news_client = NewsClient::new();
-
-        Self { news_client }
+        Self {}
     }
 
     /// Get available topics for a built-in source dynamically
@@ -104,21 +100,20 @@ impl FeedAggregator {
 
     /// Fetch articles from all available news sources using configuration
     pub async fn fetch_all_news_with_config(
-        &mut self,
+        &self,
         config: &crate::models::AppConfig,
     ) -> Result<FetchResult, FeedError> {
         let mut all_articles = Vec::new();
         let mut successful_sources = Vec::new();
         let mut failed_sources = Vec::new();
-        let start_time = Instant::now();
+        let start_time = tokio::time::Instant::now();
 
         let sources = Self::get_available_sources_from_config(config);
-        let enabled_sources: Vec<_> = sources.iter().filter(|s| s.enabled).collect();
+        let enabled_sources: Vec<_> = sources.into_iter().filter(|s| s.enabled).collect();
 
         log::info!(
-            "Starting fetch from {} enabled news sources (out of {} total)",
-            enabled_sources.len(),
-            sources.len()
+            "Starting fetch from {} enabled news sources",
+            enabled_sources.len()
         );
 
         if enabled_sources.is_empty() {
@@ -131,99 +126,87 @@ impl FeedAggregator {
             });
         }
 
-        for (index, source_config) in enabled_sources.iter().enumerate() {
-            log::debug!(
-                "Processing source {}/{}: {}",
-                index + 1,
-                enabled_sources.len(),
-                source_config.name
-            );
+        let mut futures: Vec<
+            std::pin::Pin<
+                Box<
+                    dyn std::future::Future<
+                            Output = (
+                                String,
+                                String,
+                                String,
+                                Result<Vec<crate::models::Article>, FeedError>,
+                            ),
+                        > + Send,
+                >,
+            >,
+        > = Vec::new();
 
+        for source_config in enabled_sources {
             if source_config.source_type == "builtin" {
-                // Find the built-in config for this source
-                let builtin_config = config
+                if let Some(builtin_config) = config
                     .feed_sources
                     .iter()
-                    .find(|s| s.id == source_config.id);
-
-                if let Some(builtin_config) = builtin_config {
-                    // Fetch from all enabled topics
+                    .find(|s| s.id == source_config.id)
+                {
                     for topic in &builtin_config.enabled_topics {
-                        log::debug!("Fetching topic '{}' from {}", topic, source_config.name);
+                        let source_id = source_config.id.clone();
+                        let source_name = source_config.name.clone();
+                        let topic = topic.clone();
 
-                        match self
-                            .fetch_from_builtin_source(
-                                &source_config.id,
-                                &source_config.name,
-                                topic,
-                            )
-                            .await
-                        {
-                            Ok(articles) => {
-                                log::info!(
-                                    "Successfully fetched {} articles from {} ({})",
-                                    articles.len(),
-                                    source_config.name,
-                                    topic
-                                );
-                                all_articles.extend(articles);
-                            }
-                            Err(e) => {
-                                log::error!(
-                                    "Failed to fetch {} from {}: {}",
-                                    topic,
-                                    source_config.name,
-                                    e
-                                );
-                                // Continue with other topics even if one fails
-                            }
-                        }
-
-                        // Small delay between topics
-                        tokio::time::sleep(Duration::from_millis(300)).await;
+                        // We need to clone self or just not use self inside if self is not Clone.
+                        // Wait, self has a news_client. If we spawn or push futures, self must live long enough.
+                        // `futures` is awaited in the same function, so references to self are fine.
+                        // However, we can't borrow self mutably or share self if futures are Boxed unless we're careful.
+                        // Wait, async blocks capture self. self is &self, which is Copy-able reference.
+                        futures.push(Box::pin(async move {
+                            let res = self
+                                .fetch_from_builtin_source(&source_id, &source_name, &topic)
+                                .await;
+                            (source_id, source_name, topic, res)
+                        }));
                     }
-                    successful_sources.push(source_config.id.clone());
                 }
             } else if source_config.source_type == "custom" {
-                // Find the custom feed config
-                let custom_config = config
+                if let Some(custom_config) = config
                     .custom_feeds
                     .iter()
-                    .find(|s| s.id == source_config.id);
-
-                if let Some(custom_config) = custom_config {
-                    match self
-                        .fetch_from_custom_feed(&custom_config.url, &source_config.name)
-                        .await
-                    {
-                        Ok(articles) => {
-                            log::info!(
-                                "Successfully fetched {} articles from custom feed {}",
-                                articles.len(),
-                                source_config.name
-                            );
-                            all_articles.extend(articles);
-                            successful_sources.push(source_config.id.clone());
-                        }
-                        Err(e) => {
-                            log::error!(
-                                "Failed to fetch custom feed {}: {}",
-                                source_config.name,
-                                e
-                            );
-                            failed_sources.push(NewsSourceError {
-                                source_id: source_config.id.clone(),
-                                source_name: source_config.name.clone(),
-                                error: e.user_message(),
-                            });
-                        }
-                    }
+                    .find(|s| s.id == source_config.id)
+                {
+                    let source_id = source_config.id.clone();
+                    let source_name = source_config.name.clone();
+                    let url = custom_config.url.clone();
+                    futures.push(Box::pin(async move {
+                        let res = self.fetch_from_custom_feed(&url, &source_name).await;
+                        (source_id, source_name, String::new(), res)
+                    }));
                 }
             }
+        }
 
-            // Add a small delay between sources to be respectful to servers
-            if index < enabled_sources.len() - 1 {
-                tokio::time::sleep(Duration::from_millis(500)).await;
+        let results = futures::future::join_all(futures).await;
+
+        for (source_id, source_name, topic, result) in results {
+            match result {
+                Ok(articles) => {
+                    log::info!(
+                        "Successfully fetched {} articles from {} ({})",
+                        articles.len(),
+                        source_name,
+                        topic
+                    );
+                    all_articles.extend(articles);
+                    if !successful_sources.contains(&source_id) {
+                        successful_sources.push(source_id);
+                    }
+                }
+                Err(e) => {
+                    log::error!("Failed to fetch from {}: {}", source_name, e);
+                    failed_sources.push(NewsSourceError {
+                        source_id,
+                        source_name,
+                        error: e.user_message(),
+                    });
+                }
             }
         }
 
@@ -260,21 +243,22 @@ impl FeedAggregator {
 
     /// Fetch articles from a built-in news source with specific topic
     async fn fetch_from_builtin_source(
-        &mut self,
+        &self,
         source_id: &str,
         source_name: &str,
         topic: &str,
     ) -> Result<Vec<Article>, FeedError> {
-        log::info!("Fetching topic '{}' from source: {}", topic, source_name);
+        log::info!("Fetching {} from {}", topic, source_name);
 
-        // Use fetch_topic method from the library
+        let mut client = NewsClient::new();
+
         let news_articles = match source_id {
-            "yahoo" => self.news_client.yahoo_finance().fetch_topic(topic).await,
-            "cnbc" => self.news_client.cnbc().fetch_topic(topic).await,
-            "marketwatch" => self.news_client.market_watch().fetch_topic(topic).await,
-            "seeking_alpha" => self.news_client.seeking_alpha().fetch_topic(topic).await,
-            "wsj" => self.news_client.wsj().fetch_topic(topic).await,
-            "nasdaq" => self.news_client.nasdaq().fetch_topic(topic).await,
+            "yahoo" => client.yahoo_finance().fetch_topic(topic).await,
+            "cnbc" => client.cnbc().fetch_topic(topic).await,
+            "marketwatch" => client.market_watch().fetch_topic(topic).await,
+            "seeking_alpha" => client.seeking_alpha().fetch_topic(topic).await,
+            "wsj" => client.wsj().fetch_topic(topic).await,
+            "nasdaq" => client.nasdaq().fetch_topic(topic).await,
             _ => {
                 return Err(FeedError::ConfigurationError(format!(
                     "Unknown source: {}",
@@ -307,15 +291,14 @@ impl FeedAggregator {
 
     /// Fetch articles from a custom RSS/Atom feed using generic source
     async fn fetch_from_custom_feed(
-        &mut self,
+        &self,
         url: &str,
         source_name: &str,
     ) -> Result<Vec<Article>, FeedError> {
         log::info!("Fetching custom feed: {} ({})", source_name, url);
 
-        // Use the generic source to fetch any RSS/Atom feed
-        let news_articles = self
-            .news_client
+        let mut client = NewsClient::new();
+        let news_articles = client
             .generic()
             .fetch_feed_by_url(url)
             .await
@@ -343,21 +326,21 @@ impl FeedAggregator {
     }
 
     /// Fetch articles from all available news sources (backward compatibility)
-    pub async fn fetch_all_news(&mut self) -> Result<FetchResult, FeedError> {
+    pub async fn fetch_all_news(&self) -> Result<FetchResult, FeedError> {
         let default_config = crate::models::AppConfig::default();
         self.fetch_all_news_with_config(&default_config).await
     }
 
     /// Refresh all feeds using configuration
     pub async fn refresh_all_feeds_with_config(
-        &mut self,
+        &self,
         config: &crate::models::AppConfig,
     ) -> Result<FetchResult, FeedError> {
         self.fetch_all_news_with_config(config).await
     }
 
     /// Refresh all feeds (alias for fetch_all_news for backward compatibility)
-    pub async fn refresh_all_feeds(&mut self) -> Result<FetchResult, FeedError> {
+    pub async fn refresh_all_feeds(&self) -> Result<FetchResult, FeedError> {
         self.fetch_all_news().await
     }
 
@@ -457,10 +440,9 @@ impl FeedAggregator {
         // Parse published date
         let published_at = if let Some(pub_date) = news_article.pub_date {
             self.parse_date(&pub_date)
-                .map(|dt| dt.to_rfc3339())
-                .unwrap_or_else(|| chrono::Utc::now().to_rfc3339())
+                .unwrap_or_else(|| chrono::Utc::now())
         } else {
-            chrono::Utc::now().to_rfc3339()
+            chrono::Utc::now()
         };
 
         let article = Article::new(
@@ -508,14 +490,14 @@ impl FeedAggregator {
     /// Deduplicate articles by URL, keeping the first occurrence of each unique URL
     fn deduplicate_articles_by_url(articles: Vec<Article>) -> Vec<Article> {
         use std::collections::HashSet;
-        
+
         let mut seen_urls = HashSet::new();
         let mut deduplicated = Vec::new();
-        
+
         for article in articles {
             // Use the article URL as the deduplication key
             let url_key = article.url.trim().to_lowercase();
-            
+
             // Skip articles with empty URLs or if we've already seen this URL
             if url_key.is_empty() {
                 // Keep articles with empty URLs but log a warning
@@ -529,7 +511,7 @@ impl FeedAggregator {
                 log::debug!("Duplicate article URL found, skipping: {}", article.url);
             }
         }
-        
+
         deduplicated
     }
 }

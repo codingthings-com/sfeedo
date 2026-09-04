@@ -1,32 +1,13 @@
 use crate::feed_aggregator::FeedAggregator;
-use crate::models::{AppConfig, CustomFeedConfig};
-use crate::services::ConfigurationService;
-use tauri::AppHandle;
+use crate::models::CustomFeedConfig;
+use crate::services::AppState;
+use tauri::State;
 
 /// Tauri commands for configuration management
 
 #[tauri::command]
-pub async fn get_app_config(app_handle: AppHandle) -> Result<AppConfig, String> {
-    let service = ConfigurationService::new(&app_handle)?;
-    service.get_app_config()
-}
-
-#[tauri::command]
-pub async fn update_app_config(config: AppConfig, app_handle: AppHandle) -> Result<(), String> {
-    let service = ConfigurationService::new(&app_handle)?;
-    service.update_app_config(config)
-}
-
-#[tauri::command]
-pub async fn reset_config_to_defaults(app_handle: AppHandle) -> Result<(), String> {
-    let service = ConfigurationService::new(&app_handle)?;
-    service.reset_config_to_defaults()
-}
-
-#[tauri::command]
-pub async fn delete_config_file(app_handle: AppHandle) -> Result<String, String> {
-    let service = ConfigurationService::new(&app_handle)?;
-    let config_dir = service.get_config_directory();
+pub async fn delete_config_file(state: State<'_, AppState>) -> Result<String, String> {
+    let config_dir = state.config_manager.get_config_dir();
     let config_file = std::path::Path::new(&config_dir).join("config.json");
 
     if config_file.exists() {
@@ -39,38 +20,19 @@ pub async fn delete_config_file(app_handle: AppHandle) -> Result<String, String>
 }
 
 #[tauri::command]
-pub async fn backup_configuration(app_handle: AppHandle) -> Result<String, String> {
-    let service = ConfigurationService::new(&app_handle)?;
-    service.backup_configuration()
-}
-
-#[tauri::command]
-pub async fn get_config_directory(app_handle: AppHandle) -> Result<String, String> {
-    let service = ConfigurationService::new(&app_handle)?;
-    Ok(service.get_config_directory())
-}
-
-#[tauri::command]
-pub async fn get_config_file_path(app_handle: AppHandle) -> Result<String, String> {
-    use crate::config::ConfigManager;
-    let config_manager = ConfigManager::new(&app_handle)?;
-    Ok(config_manager
+pub async fn get_config_file_path(state: State<'_, AppState>) -> Result<String, String> {
+    Ok(state
+        .config_manager
         .get_config_file()
         .to_string_lossy()
         .to_string())
 }
 
 #[tauri::command]
-pub async fn sync_configuration(app_handle: AppHandle) -> Result<(), String> {
-    let service = ConfigurationService::new(&app_handle)?;
-    service.sync_configuration()
-}
-
-#[tauri::command]
 pub async fn update_source_topics(
     source_id: String,
     enabled_topics: Vec<String>,
-    app_handle: AppHandle,
+    state: State<'_, AppState>,
 ) -> Result<(), String> {
     log::info!(
         "Updating topics for source '{}': {:?}",
@@ -78,8 +40,7 @@ pub async fn update_source_topics(
         enabled_topics
     );
 
-    let service = ConfigurationService::new(&app_handle)?;
-    let mut config = service.get_app_config()?;
+    let mut config = state.get_config();
 
     // Find and update the source
     if let Some(source) = config.feed_sources.iter_mut().find(|s| s.id == source_id) {
@@ -90,7 +51,7 @@ pub async fn update_source_topics(
             enabled_topics
         );
         source.enabled_topics = enabled_topics;
-        service.update_app_config(config)?;
+        state.update_config(config)?;
         log::info!("Successfully updated topics for source '{}'", source_id);
         Ok(())
     } else {
@@ -101,12 +62,11 @@ pub async fn update_source_topics(
 
 #[tauri::command]
 pub async fn add_custom_feed(
-    app_handle: AppHandle,
     name: String,
     url: String,
+    state: State<'_, AppState>,
 ) -> Result<String, String> {
-    let service = ConfigurationService::new(&app_handle)?;
-    let mut config = service.get_app_config()?;
+    let mut config = state.get_config();
 
     // Generate ID from name
     let id = format!("custom_{}", name.to_lowercase().replace(" ", "_"));
@@ -125,25 +85,24 @@ pub async fn add_custom_feed(
     };
 
     config.custom_feeds.push(custom_feed);
-    service.update_app_config(config)?;
+    state.update_config(config)?;
 
     Ok(id)
 }
 
 #[tauri::command]
 pub async fn update_custom_feed(
-    app_handle: AppHandle,
     id: String,
     name: String,
     url: String,
+    state: State<'_, AppState>,
 ) -> Result<(), String> {
-    let service = ConfigurationService::new(&app_handle)?;
-    let mut config = service.get_app_config()?;
+    let mut config = state.get_config();
 
     if let Some(feed) = config.custom_feeds.iter_mut().find(|f| f.id == id) {
         feed.name = name;
         feed.url = url;
-        service.update_app_config(config)?;
+        state.update_config(config)?;
         Ok(())
     } else {
         Err(format!("Custom feed not found: {}", id))
@@ -151,28 +110,26 @@ pub async fn update_custom_feed(
 }
 
 #[tauri::command]
-pub async fn delete_custom_feed(app_handle: AppHandle, id: String) -> Result<(), String> {
-    let service = ConfigurationService::new(&app_handle)?;
-    let mut config = service.get_app_config()?;
+pub async fn delete_custom_feed(id: String, state: State<'_, AppState>) -> Result<(), String> {
+    let mut config = state.get_config();
 
     config.custom_feeds.retain(|f| f.id != id);
-    service.update_app_config(config)?;
+    state.update_config(config)?;
 
     Ok(())
 }
 
 #[tauri::command]
 pub async fn toggle_custom_feed(
-    app_handle: AppHandle,
     id: String,
     enabled: bool,
+    state: State<'_, AppState>,
 ) -> Result<(), String> {
-    let service = ConfigurationService::new(&app_handle)?;
-    let mut config = service.get_app_config()?;
+    let mut config = state.get_config();
 
     if let Some(feed) = config.custom_feeds.iter_mut().find(|f| f.id == id) {
         feed.enabled = enabled;
-        service.update_app_config(config)?;
+        state.update_config(config)?;
         Ok(())
     } else {
         Err(format!("Custom feed not found: {}", id))

@@ -1,6 +1,6 @@
 use crate::services::ConfigurationService;
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager, PhysicalPosition, PhysicalSize, Monitor};
+use tauri::{AppHandle, Manager, Monitor, PhysicalPosition, PhysicalSize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WindowStateParams {
@@ -48,22 +48,22 @@ fn is_position_visible(x: i32, y: i32, width: u32, height: u32, monitors: &[Moni
     for monitor in monitors {
         let monitor_pos = monitor.position();
         let monitor_size = monitor.size();
-        
+
         let monitor_x = monitor_pos.x;
         let monitor_y = monitor_pos.y;
-        let monitor_width = monitor_size.width as i32;
-        let monitor_height = monitor_size.height as i32;
-        
+        let _monitor_width = monitor_size.width as f64;
+        let _monitor_height = monitor_size.height as f64;
+
         // Check if window overlaps with this monitor
         // Window is visible if it overlaps by at least 100 pixels
         let overlap_x = (x + width as i32).max(monitor_x) - x.max(monitor_x);
         let overlap_y = (y + height as i32).max(monitor_y) - y.max(monitor_y);
-        
+
         if overlap_x >= 100 && overlap_y >= 100 {
             return true;
         }
     }
-    
+
     false
 }
 
@@ -74,8 +74,9 @@ pub fn restore_window_state(app_handle: &AppHandle) -> Result<(), String> {
 
     if let Some(window) = app_handle.get_webview_window("main") {
         // Set size if saved (with reasonable bounds)
-        let (safe_width, safe_height) = if let (Some(width), Some(height)) = 
-            (config.window_state.width, config.window_state.height) {
+        let (safe_width, safe_height) = if let (Some(width), Some(height)) =
+            (config.window_state.width, config.window_state.height)
+        {
             // Ensure size is within reasonable bounds
             let w = width.max(300).min(3840); // Min 300, max 4K width
             let h = height.max(700).min(2160); // Min 700, max 4K height
@@ -90,7 +91,9 @@ pub fn restore_window_state(app_handle: &AppHandle) -> Result<(), String> {
             // Get available monitors
             match window.available_monitors() {
                 Ok(monitors) => {
-                    if !monitors.is_empty() && is_position_visible(x, y, safe_width, safe_height, &monitors) {
+                    if !monitors.is_empty()
+                        && is_position_visible(x, y, safe_width, safe_height, &monitors)
+                    {
                         let _ = window.set_position(PhysicalPosition::new(x, y));
                     } else {
                         // Position is off-screen, center the window

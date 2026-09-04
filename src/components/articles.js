@@ -85,35 +85,6 @@ class ArticleManager {
 
 
 
-    // Search articles
-    async searchArticles(query) {
-        if (!query.trim()) {
-            // If empty query, reload all articles
-            await this.loadArticles();
-            return;
-        }
-
-        try {
-            this.isLoading = true;
-            window.AppNavigation.showProgress('Searching articles...');
-
-            const results = await TauriAPI.articles.searchArticles(query, 100);
-            this.articles = results;
-            this.totalCount = results.length;
-
-
-            this.renderArticles();
-            window.AppNavigation.updateStatus(`Found ${results.length} articles matching "${query}"`);
-        } catch (error) {
-            // console.error('Failed to search articles:', error);
-            window.AppNavigation.updateStatus('Search failed');
-            this.showError('Search failed. Please try again.');
-        } finally {
-            this.isLoading = false;
-            window.AppNavigation.hideProgress();
-        }
-    }
-
     // Sort articles based on current sort setting
     getSortedArticles() {
         const sorted = [...this.articles];
@@ -385,10 +356,20 @@ document.addEventListener('DOMContentLoaded', () => {
         window.setupSortButtons();
     }
 
-    // Load articles initially after a short delay to ensure UI is ready
-    setTimeout(() => {
-        articleManager.loadArticles();
-    }, 100);
+    // Show loading overlay immediately so the user never sees an empty screen
+    window.AppNavigation.showProgress('REFRESHING FEEDS...');
+
+    // Wait for refreshManager to be ready, then trigger initial refresh.
+    // refreshManager is created by refresh.js which loads after articles.js,
+    // so we poll until it's available.
+    const waitForRefreshManager = () => {
+        if (window.refreshManager) {
+            window.refreshManager.forceRefresh();
+        } else {
+            setTimeout(waitForRefreshManager, 50);
+        }
+    };
+    waitForRefreshManager();
 
     // Set up global refresh handler
     window.refreshArticles = () => articleManager.refresh();

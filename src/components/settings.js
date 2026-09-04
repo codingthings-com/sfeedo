@@ -675,20 +675,6 @@ class SettingsManager {
     document.dispatchEvent(event);
   }
 
-  // Validate feed URL before adding
-  async validateFeedUrl(url) {
-    try {
-      const result = await TauriAPI.feedSources.validateFeedSource(url);
-      return result;
-    } catch (error) {
-      // console.error('Failed to validate feed URL:', error);
-      return {
-        is_valid: false,
-        error_message: 'Failed to validate URL'
-      };
-    }
-  }
-
   // Reset configuration to defaults
   async resetConfiguration() {
     if (!confirm('Are you sure you want to reset all settings to defaults? This cannot be undone.')) {

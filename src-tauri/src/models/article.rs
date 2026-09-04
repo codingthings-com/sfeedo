@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 /// Represents a news article in the feed reader
@@ -9,8 +10,8 @@ pub struct Article {
     pub content: Option<String>,
     pub url: String,
     pub source_id: String,
-    pub published_at: String, // ISO 8601 datetime string
-    pub fetched_at: String,   // ISO 8601 datetime string
+    pub published_at: DateTime<Utc>,
+    pub fetched_at: DateTime<Utc>,
 }
 
 impl Article {
@@ -22,9 +23,9 @@ impl Article {
         content: Option<String>,
         url: String,
         source_id: String,
-        published_at: String,
+        published_at: DateTime<Utc>,
     ) -> Self {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = Utc::now();
 
         Self {
             id,
@@ -58,15 +59,6 @@ impl Article {
 
         if self.source_id.trim().is_empty() {
             return Err("Article source_id cannot be empty".to_string());
-        }
-
-        // Validate datetime format
-        if chrono::DateTime::parse_from_rfc3339(&self.published_at).is_err() {
-            return Err("Invalid published_at datetime format".to_string());
-        }
-
-        if chrono::DateTime::parse_from_rfc3339(&self.fetched_at).is_err() {
-            return Err("Invalid fetched_at datetime format".to_string());
         }
 
         Ok(())

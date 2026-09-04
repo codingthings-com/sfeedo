@@ -459,8 +459,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     refreshManager.loadConfiguration();
   }, 100);
+  
+  // Export for global access
+  window.RefreshManager = RefreshManager;
+  window.refreshManager = refreshManager;
 });
-
-// Export for global access
-window.RefreshManager = RefreshManager;
-window.refreshManager = refreshManager;

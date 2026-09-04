@@ -66,7 +66,7 @@ impl ConfigManager {
         // Migration: Remove CNN from feed sources if it exists
         let original_count = config.feed_sources.len();
         config.feed_sources.retain(|source| source.id != "cnn");
-        
+
         if config.feed_sources.len() < original_count {
             log::info!("Migrated config: removed CNN feed source");
             // Save the migrated config
@@ -87,8 +87,16 @@ impl ConfigManager {
         let json_content = serde_json::to_string_pretty(config)
             .map_err(|e| format!("Failed to serialize config to JSON: {}", e))?;
 
-        fs::write(&self.config_file, json_content)
-            .map_err(|e| format!("Failed to write config file: {}", e))?;
+        // Write to a temporary file first for atomic writes
+        let tmp_file = self.config_file.with_extension("tmp");
+        fs::write(&tmp_file, json_content)
+            .map_err(|e| format!("Failed to write temporary config file: {}", e))?;
+
+        // Rename temp file to target file (atomic on POSIX and Windows)
+        fs::rename(&tmp_file, &self.config_file).map_err(|e| {
+            let _ = fs::remove_file(&tmp_file); // cleanup on error
+            format!("Failed to save config file (rename): {}", e)
+        })?;
 
         Ok(())
     }
