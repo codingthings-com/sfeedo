@@ -1,6 +1,6 @@
 [package]
 name = "sfeedo"
-version = "0.1.10"
+version = "0.1.11"
 description = "Sfeedo - Desktop Feed Reader"
 authors = ["codingthings.com"]
 license = "See LICENSE file"
