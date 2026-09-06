@@ -57,11 +57,11 @@ class RefreshManager {
   }
 
   // Perform manual refresh
-  async performManualRefresh() {
+  async performManualRefresh(message = 'Manual refresh in progress...') {
     if (this.isRefreshing) return;
 
     try {
-      this.startRefresh('Manual refresh in progress...');
+      this.startRefresh(message);
       
       // Call Tauri backend to refresh feeds
       const result = await TauriAPI.refresh.refreshFeeds();
@@ -436,10 +436,10 @@ class RefreshManager {
     }
   }
 
-  // Force refresh (for external calls)
+  // Force refresh (for external calls, e.g. startup)
   async forceRefresh() {
     if (!this.isRefreshing) {
-      await this.performManualRefresh();
+      await this.performManualRefresh('Initializing feeds...');
     }
   }
 }

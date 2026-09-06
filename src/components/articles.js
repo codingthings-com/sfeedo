@@ -362,7 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (overlay) {
         overlay.classList.remove('hidden');
         const text = overlay.querySelector('.teletext-loading-text');
-        if (text) text.textContent = 'REFRESHING FEEDS...';
+        if (text) text.textContent = 'INITIALIZING FEEDS...';
     }
 
     // Wait for refreshManager to be ready, then trigger initial refresh.
