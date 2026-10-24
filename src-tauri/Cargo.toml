@@ -15,22 +15,22 @@ name = "sfeedo_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2.6.3", features = [] }
+tauri-build = { version = "2.7.4", features = [] }
 
 [dependencies]
-serde_json = "1.0.151"
+serde_json = "1.0.154"
 serde = { version = "1.0.229", features = ["derive"] }
 log = "0.4.34"
-tauri = { version = "2.11.5", features = [] }
-tauri-plugin-log = "2.9.1"
-finance-news-aggregator-rs = "0.2.2"
+tauri = { version = "2.12.5", features = [] }
+tauri-plugin-log = "2.10.1"
+finance-news-aggregator-rs = "0.2.4"
 # finance-news-aggregator-rs= { path = "../../finance-news-aggregator-rs"} 
 # finance-news-aggregator-rs = { git = "https://github.com/codingthings-com/finance-news-aggregator-rs", branch = "integtests" }
 
-tokio = { version = "1.53.1", features = ["full"] }
+tokio = { version = "1.54.1", features = ["full"] }
 chrono = { version = "0.4.45", features = ["serde"] }
-thiserror = "2.0.20"
-futures = "0.3.30"
+thiserror = "2.0.21"
+futures = "0.3.34"
 
 [dev-dependencies]
 tempfile = "3.27.0"
