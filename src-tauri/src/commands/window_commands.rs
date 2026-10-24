@@ -1,6 +1,6 @@
-use crate::services::ConfigurationService;
+use crate::services::AppState;
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager, Monitor, PhysicalPosition, PhysicalSize};
+use tauri::{AppHandle, Manager, Monitor, PhysicalPosition, PhysicalSize, State};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WindowStateParams {
@@ -14,25 +14,23 @@ pub struct WindowStateParams {
 #[tauri::command]
 pub async fn save_window_state(
     params: WindowStateParams,
-    app_handle: AppHandle,
+    state: State<'_, AppState>,
 ) -> Result<(), String> {
-    let service = ConfigurationService::new(&app_handle)?;
-    let mut config = service.get_app_config()?;
-
-    config.window_state.x = Some(params.x);
-    config.window_state.y = Some(params.y);
-    config.window_state.width = Some(params.width);
-    config.window_state.height = Some(params.height);
-
-    service.update_app_config(config)?;
-    Ok(())
+    // Go through AppState so the in-memory config sees the change; writing the
+    // file directly let the next config save overwrite the window state
+    state.modify_config(|config| {
+        config.window_state.x = Some(params.x);
+        config.window_state.y = Some(params.y);
+        config.window_state.width = Some(params.width);
+        config.window_state.height = Some(params.height);
+        Ok(())
+    })
 }
 
 /// Get the saved window state
 #[tauri::command]
-pub async fn get_window_state(app_handle: AppHandle) -> Result<WindowStateParams, String> {
-    let service = ConfigurationService::new(&app_handle)?;
-    let config = service.get_app_config()?;
+pub async fn get_window_state(state: State<'_, AppState>) -> Result<WindowStateParams, String> {
+    let config = state.get_config();
 
     Ok(WindowStateParams {
         x: config.window_state.x.unwrap_or(100),
@@ -69,8 +67,7 @@ fn is_position_visible(x: i32, y: i32, width: u32, height: u32, monitors: &[Moni
 
 /// Restore window position and size from saved state
 pub fn restore_window_state(app_handle: &AppHandle) -> Result<(), String> {
-    let service = ConfigurationService::new(app_handle)?;
-    let config = service.get_app_config()?;
+    let config = app_handle.state::<AppState>().get_config();
 
     if let Some(window) = app_handle.get_webview_window("main") {
         // Set size if saved (with reasonable bounds)
@@ -78,8 +75,8 @@ pub fn restore_window_state(app_handle: &AppHandle) -> Result<(), String> {
             (config.window_state.width, config.window_state.height)
         {
             // Ensure size is within reasonable bounds
-            let w = width.max(300).min(3840); // Min 300, max 4K width
-            let h = height.max(700).min(2160); // Min 700, max 4K height
+            let w = width.clamp(300, 3840); // Min 300, max 4K width
+            let h = height.clamp(700, 2160); // Min 700, max 4K height
             let _ = window.set_size(PhysicalSize::new(w, h));
             (w, h)
         } else {

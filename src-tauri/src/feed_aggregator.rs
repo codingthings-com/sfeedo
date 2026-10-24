@@ -5,6 +5,10 @@ use finance_news_aggregator_rs::{
 };
 use tokio::time::Duration;
 
+/// Outcome of fetching one source/topic: (source_id, source_name, topic, articles)
+type SourceFetch = (String, String, String, Result<Vec<Article>, FeedError>);
+type SourceFetchFuture<'a> = futures::future::BoxFuture<'a, SourceFetch>;
+
 /// Available financial news sources with topics
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct NewsSource {
@@ -19,6 +23,7 @@ pub struct NewsSource {
 }
 
 /// Feed aggregation service that fetches and processes news from financial sources
+#[derive(Default)]
 pub struct FeedAggregator {}
 
 impl FeedAggregator {
@@ -45,6 +50,12 @@ impl FeedAggregator {
         let result: Vec<String> = topics.iter().map(|s| s.to_string()).collect();
         log::info!("Available topics for {}: {:?}", source_id, result);
         result
+    }
+
+    /// The `source_id` assigned to articles fetched from a custom feed.
+    /// It is shown as the article's source label, so it is derived from the feed name.
+    pub fn custom_feed_source_id(feed_name: &str) -> String {
+        feed_name.to_lowercase().replace(" ", "_")
     }
 
     /// Convert FeedSourceConfig to NewsSource
@@ -126,20 +137,7 @@ impl FeedAggregator {
             });
         }
 
-        let mut futures: Vec<
-            std::pin::Pin<
-                Box<
-                    dyn std::future::Future<
-                            Output = (
-                                String,
-                                String,
-                                String,
-                                Result<Vec<crate::models::Article>, FeedError>,
-                            ),
-                        > + Send,
-                >,
-            >,
-        > = Vec::new();
+        let mut futures: Vec<SourceFetchFuture<'_>> = Vec::new();
 
         for source_config in enabled_sources {
             if source_config.source_type == "builtin" {
@@ -310,8 +308,7 @@ impl FeedAggregator {
             source_name
         );
 
-        // Generate a simple ID from the source name
-        let source_id = source_name.to_lowercase().replace(" ", "_");
+        let source_id = Self::custom_feed_source_id(source_name);
 
         // Convert ExternalNewsArticle to our internal Article model
         let articles = news_articles
@@ -439,8 +436,7 @@ impl FeedAggregator {
 
         // Parse published date
         let published_at = if let Some(pub_date) = news_article.pub_date {
-            self.parse_date(&pub_date)
-                .unwrap_or_else(|| chrono::Utc::now())
+            self.parse_date(&pub_date).unwrap_or_else(chrono::Utc::now)
         } else {
             chrono::Utc::now()
         };

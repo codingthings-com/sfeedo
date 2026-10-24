@@ -30,9 +30,27 @@ impl AppState {
 
     /// Update the configuration and save to disk
     pub fn update_config(&self, new_config: AppConfig) -> Result<(), String> {
+        self.modify_config(|config| {
+            *config = new_config;
+            Ok(())
+        })
+    }
+
+    /// Apply a change to the configuration and save it to disk.
+    ///
+    /// The write lock is held for the whole read-modify-write so concurrent
+    /// commands (e.g. a window-state save racing a feed delete) cannot
+    /// overwrite each other's changes. Nothing is applied if `change` fails.
+    pub fn modify_config<T>(
+        &self,
+        change: impl FnOnce(&mut AppConfig) -> Result<T, String>,
+    ) -> Result<T, String> {
+        let mut current = self.config.write().unwrap();
+        let mut new_config = current.clone();
+        let result = change(&mut new_config)?;
         new_config.validate()?;
         self.config_manager.save_config(&new_config)?;
-        *self.config.write().unwrap() = new_config;
-        Ok(())
+        *current = new_config;
+        Ok(result)
     }
 }

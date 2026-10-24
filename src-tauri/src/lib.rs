@@ -46,7 +46,7 @@ pub fn run() {
             }
 
             // Initialize app state
-            let app_state = AppState::new(&app.handle())
+            let app_state = AppState::new(app.handle())
                 .map_err(|e| {
                     log::error!("Failed to initialize app state: {}", e);
                     e
@@ -56,7 +56,7 @@ pub fn run() {
             app.manage(app_state);
 
             // Restore window state
-            if let Err(e) = commands::window_commands::restore_window_state(&app.handle()) {
+            if let Err(e) = commands::window_commands::restore_window_state(app.handle()) {
                 log::warn!("Failed to restore window state: {}", e);
             }
 

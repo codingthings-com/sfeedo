@@ -117,7 +117,7 @@ class SettingsManager {
     const builtinSourcesHTML = builtinSources.map(source => {
       // console.log('Rendering source:', source.id, 'available_topics:', source.available_topics, 'enabled_topics:', source.enabled_topics);
       return `
-      <div class="teletext-setting-item" data-source-id="${source.id}">
+      <div class="teletext-setting-item" data-source-id="${this.escapeHtml(source.id)}">
         <div class="teletext-setting-info">
           <label class="teletext-setting-label">${this.escapeHtml(source.name).toUpperCase()}</label>
           <p class="teletext-setting-description">
@@ -126,7 +126,7 @@ class SettingsManager {
           ${source.available_topics && source.available_topics.length > 0 ? `
             <div class="teletext-topics-list">
               <p class="teletext-setting-description">TOPICS (${source.enabled_topics ? source.enabled_topics.length : 0}/${source.available_topics.length}):</p>
-              <button class="teletext-btn-small" data-action="manage-topics" data-source-id="${source.id}">
+              <button class="teletext-btn-small" data-action="manage-topics" data-source-id="${this.escapeHtml(source.id)}">
                 MANAGE TOPICS
               </button>
             </div>
@@ -135,7 +135,7 @@ class SettingsManager {
         <div class="teletext-setting-control">
           <label class="teletext-toggle-switch">
             <input type="checkbox" ${source.enabled ? 'checked' : ''} 
-                   data-action="toggle-source" data-source-id="${source.id}">
+                   data-action="toggle-source" data-source-id="${this.escapeHtml(source.id)}">
             <span class="teletext-toggle-slider"></span>
           </label>
         </div>
@@ -144,7 +144,7 @@ class SettingsManager {
     }).join('');
 
     const customSourcesHTML = customSources.length > 0 ? customSources.map(source => `
-      <div class="teletext-setting-item" data-source-id="${source.id}">
+      <div class="teletext-setting-item" data-source-id="${this.escapeHtml(source.id)}">
         <div class="teletext-setting-info">
           <label class="teletext-setting-label">${this.escapeHtml(source.name).toUpperCase()}</label>
           <p class="teletext-setting-description">${this.escapeHtml(source.url).toUpperCase()}</p>
@@ -152,14 +152,14 @@ class SettingsManager {
             ${source.enabled ? '[ACTIVE]' : '[DISABLED]'} - CUSTOM RSS/ATOM FEED
           </p>
           <div class="teletext-custom-actions">
-            <button class="teletext-btn-small" data-action="edit-custom" data-source-id="${source.id}">EDIT</button>
-            <button class="teletext-btn-small teletext-btn-danger" data-action="delete-custom" data-source-id="${source.id}">DELETE</button>
+            <button class="teletext-btn-small" data-action="edit-custom" data-source-id="${this.escapeHtml(source.id)}">EDIT</button>
+            <button class="teletext-btn-small teletext-btn-danger" data-action="delete-custom" data-source-id="${this.escapeHtml(source.id)}">DELETE</button>
           </div>
         </div>
         <div class="teletext-setting-control">
           <label class="teletext-toggle-switch">
             <input type="checkbox" ${source.enabled ? 'checked' : ''} 
-                   data-action="toggle-custom" data-source-id="${source.id}">
+                   data-action="toggle-custom" data-source-id="${this.escapeHtml(source.id)}">
             <span class="teletext-toggle-slider"></span>
           </label>
         </div>
@@ -431,155 +431,6 @@ class SettingsManager {
     }
   }
 
-  // Add source functionality removed - sources are built-in
-
-  // Show edit source dialog
-  showEditSourceDialog(sourceId) {
-    const source = this.feedSources.find(s => s.id === sourceId);
-    if (source) {
-      const dialog = this.createSourceDialog(source);
-      document.body.appendChild(dialog);
-    }
-  }
-
-  // Create source dialog (edit only)
-  createSourceDialog(source) {
-    if (!source) {
-      // console.error('createSourceDialog called without source - add functionality removed');
-      return;
-    }
-    
-    const dialog = document.createElement('div');
-    dialog.className = 'source-dialog';
-
-    dialog.innerHTML = `
-      <div class="dialog-overlay">
-        <div class="dialog-content">
-          <div class="dialog-header">
-            <h3>Edit Feed Source</h3>
-            <button class="dialog-close">&times;</button>
-          </div>
-          <div class="dialog-body">
-            <form class="source-form">
-              <div class="form-group">
-                <label class="form-label">Name</label>
-                <input type="text" class="form-input" name="name" 
-                       value="${source?.name || ''}" placeholder="e.g., Reuters Finance" required>
-              </div>
-              <div class="form-group">
-                <label class="form-label">URL</label>
-                <input type="url" class="form-input" name="url" 
-                       value="${source?.url || ''}" placeholder="https://example.com/feed.rss" required>
-              </div>
-              <div class="form-group">
-                <label class="form-checkbox">
-                  <input type="checkbox" name="enabled" ${source?.enabled !== false ? 'checked' : ''}>
-                  <span class="checkbox-label">Enable this source</span>
-                </label>
-              </div>
-            </form>
-          </div>
-          <div class="dialog-footer">
-            <button class="btn btn-outline dialog-cancel">Cancel</button>
-            <button class="btn btn-primary dialog-save">Update Source</button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // Add event listeners
-    const closeBtn = dialog.querySelector('.dialog-close');
-    const cancelBtn = dialog.querySelector('.dialog-cancel');
-    const saveBtn = dialog.querySelector('.dialog-save');
-    const overlay = dialog.querySelector('.dialog-overlay');
-
-    const closeDialog = () => {
-      document.body.removeChild(dialog);
-    };
-
-    closeBtn.addEventListener('click', closeDialog);
-    cancelBtn.addEventListener('click', closeDialog);
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) closeDialog();
-    });
-
-    saveBtn.addEventListener('click', async () => {
-      const form = dialog.querySelector('.source-form');
-      const formData = new FormData(form);
-
-      if (form.checkValidity()) {
-        const sourceData = {
-          name: formData.get('name'),
-          url: formData.get('url'),
-          enabled: formData.has('enabled')
-        };
-
-        try {
-          saveBtn.disabled = true;
-          saveBtn.textContent = 'Saving...';
-
-          await this.updateSource(source.id, sourceData);
-
-          closeDialog();
-        } catch (error) {
-          // Error is already handled in add/update methods
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Update Source';
-        }
-      } else {
-        form.reportValidity();
-      }
-    });
-
-    return dialog;
-  }
-
-  // Add source functionality removed - sources are built-in
-
-  // Update existing source
-  async updateSource(sourceId, sourceData) {
-    try {
-      const sourceIndex = this.feedSources.findIndex(s => s.id === sourceId);
-      if (sourceIndex === -1) return;
-
-      const updatedSource = {
-        ...this.feedSources[sourceIndex],
-        ...sourceData
-      };
-
-      await TauriAPI.feedSources.updateFeedSource(updatedSource);
-
-      this.feedSources[sourceIndex] = updatedSource;
-      this.renderSettings();
-      window.AppNavigation.updateStatus(`Updated feed source: ${sourceData.name}`);
-    } catch (error) {
-      // console.error('Failed to update feed source:', error);
-      window.AppNavigation.updateStatus('Failed to update feed source');
-      throw error;
-    }
-  }
-
-  // Remove source
-  async removeSource(sourceId) {
-    const source = this.feedSources.find(s => s.id === sourceId);
-    if (!source) return;
-
-    if (!confirm(`Are you sure you want to remove "${source.name}"?`)) {
-      return;
-    }
-
-    try {
-      await TauriAPI.feedSources.removeFeedSource(sourceId);
-
-      this.feedSources = this.feedSources.filter(s => s.id !== sourceId);
-      this.renderSettings();
-      window.AppNavigation.updateStatus(`Removed feed source: ${source.name}`);
-    } catch (error) {
-      // console.error('Failed to remove feed source:', error);
-      window.AppNavigation.updateStatus('Failed to remove feed source');
-    }
-  }
-
   // Toggle source enabled state
   async toggleSource(sourceId, enabled) {
     const source = this.feedSources.find(s => s.id === sourceId);
@@ -594,11 +445,8 @@ class SettingsManager {
     } catch (error) {
       // console.error('Failed to toggle feed source:', error);
       window.AppNavigation.updateStatus('Failed to update feed source');
-      // Revert the toggle
-      const toggle = this.container.querySelector(`[data-source-id="${sourceId}"]`);
-      if (toggle) {
-        toggle.checked = !enabled;
-      }
+      // Re-render from unchanged state to revert the toggle
+      this.renderSettings();
     }
   }
 
@@ -610,22 +458,6 @@ class SettingsManager {
       // console.error('Failed to save configuration:', error);
       throw error;
     }
-  }
-
-  // Check for updates
-  checkForUpdates() {
-    window.AppNavigation.showProgress('Checking for updates...');
-
-    setTimeout(() => {
-      window.AppNavigation.hideProgress();
-      window.AppNavigation.updateStatus('No updates available');
-    }, 2000);
-  }
-
-  // View logs
-  viewLogs() {
-    window.AppNavigation.updateStatus('Opening logs...');
-    // This will be implemented with Tauri shell API
   }
 
   // Get current configuration
@@ -641,9 +473,75 @@ class SettingsManager {
   // Utility function to escape HTML
   escapeHtml(text) {
     if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    return String(text)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // In-app replacement for window.confirm(). The macOS webview (WKWebView via wry)
+  // does not implement JS dialogs, so confirm() returns false and alert() is a no-op.
+  showConfirmDialog(message, confirmLabel = 'CONFIRM') {
+    return new Promise(resolve => {
+      const dialog = this.createMessageDialog(message, `
+        <button class="btn btn-outline dialog-cancel">CANCEL</button>
+        <button class="btn btn-primary teletext-btn-danger dialog-confirm">${this.escapeHtml(confirmLabel)}</button>
+      `);
+
+      const close = (result) => {
+        document.removeEventListener('keydown', onKeyDown);
+        dialog.remove();
+        resolve(result);
+      };
+      const onKeyDown = (e) => {
+        if (e.key === 'Escape') close(false);
+      };
+
+      dialog.querySelector('.dialog-close').addEventListener('click', () => close(false));
+      dialog.querySelector('.dialog-cancel').addEventListener('click', () => close(false));
+      dialog.querySelector('.dialog-confirm').addEventListener('click', () => close(true));
+      dialog.querySelector('.dialog-overlay').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) close(false);
+      });
+      document.addEventListener('keydown', onKeyDown);
+
+      document.body.appendChild(dialog);
+      dialog.querySelector('.dialog-cancel').focus();
+    });
+  }
+
+  // In-app replacement for window.alert()
+  showNotice(message) {
+    const dialog = this.createMessageDialog(message, `
+      <button class="btn btn-primary dialog-confirm">OK</button>
+    `);
+    const close = () => dialog.remove();
+    dialog.querySelector('.dialog-close').addEventListener('click', close);
+    dialog.querySelector('.dialog-confirm').addEventListener('click', close);
+    document.body.appendChild(dialog);
+    dialog.querySelector('.dialog-confirm').focus();
+  }
+
+  createMessageDialog(message, footerHTML) {
+    const dialog = document.createElement('div');
+    dialog.className = 'source-dialog';
+    dialog.innerHTML = `
+      <div class="dialog-overlay">
+        <div class="dialog-content">
+          <div class="dialog-header">
+            <h3>SFEEDO</h3>
+            <button class="dialog-close">&times;</button>
+          </div>
+          <div class="dialog-body">
+            <p class="dialog-description">${this.escapeHtml(message).toUpperCase()}</p>
+          </div>
+          <div class="dialog-footer">${footerHTML}</div>
+        </div>
+      </div>
+    `;
+    return dialog;
   }
 
   // Show error message
@@ -655,7 +553,7 @@ class SettingsManager {
         <div class="error-icon">⚠️</div>
         <h3>Error Loading Settings</h3>
         <p>${message}</p>
-        <button class="btn btn-primary" onclick="settingsManager.loadConfiguration()">
+        <button class="btn btn-primary" onclick="window.settingsManager.loadConfiguration()">
           Try Again
         </button>
       </div>
@@ -677,13 +575,15 @@ class SettingsManager {
 
   // Reset configuration to defaults
   async resetConfiguration() {
-    if (!confirm('Are you sure you want to reset all settings to defaults? This cannot be undone.')) {
-      return;
-    }
+    const confirmed = await this.showConfirmDialog(
+      'Are you sure you want to reset all settings to defaults? This cannot be undone.',
+      'RESET'
+    );
+    if (!confirmed) return;
 
     try {
       window.AppNavigation.showProgress('Resetting configuration...');
-      await TauriAPI.config.deleteConfigFile();
+      await TauriAPI.config.resetConfig();
       window.AppNavigation.hideProgress();
       window.AppNavigation.updateStatus('Configuration reset successfully');
       await this.loadConfiguration();
@@ -719,7 +619,7 @@ class SettingsManager {
       <div class="dialog-overlay">
         <div class="dialog-content">
           <div class="dialog-header">
-            <h3>MANAGE TOPICS - ${source.name.toUpperCase()}</h3>
+            <h3>MANAGE TOPICS - ${this.escapeHtml(source.name).toUpperCase()}</h3>
             <button class="dialog-close">&times;</button>
           </div>
           <div class="dialog-body">
@@ -753,7 +653,7 @@ class SettingsManager {
       // console.log('Enabled topics:', enabledTopics);
 
       if (enabledTopics.length === 0) {
-        alert('Please select at least one topic');
+        this.showNotice('Please select at least one topic');
         return;
       }
 
@@ -767,7 +667,7 @@ class SettingsManager {
         closeDialog();
       } catch (error) {
         // console.error('Failed to update topics:', error);
-        alert('Failed to update topics: ' + error.message);
+        this.showNotice('Failed to update topics: ' + error.message);
         window.AppNavigation.updateStatus('Failed to update topics');
       }
     });
@@ -793,12 +693,12 @@ class SettingsManager {
               <div class="form-group">
                 <label class="form-label">NAME</label>
                 <input type="text" class="form-input" name="name" 
-                       value="${feed?.name || ''}" placeholder="e.g., Reuters Finance" required>
+                       value="${this.escapeHtml(feed?.name)}" placeholder="e.g., Reuters Finance" required>
               </div>
               <div class="form-group">
                 <label class="form-label">RSS/ATOM URL</label>
                 <input type="url" class="form-input" name="url" 
-                       value="${feed?.url || ''}" placeholder="https://example.com/feed.rss" required>
+                       value="${this.escapeHtml(feed?.url)}" placeholder="https://example.com/feed.rss" required>
               </div>
             </form>
           </div>
@@ -844,6 +744,7 @@ class SettingsManager {
       } catch (error) {
         // console.error('Failed to save custom feed:', error);
         window.AppNavigation.updateStatus('Failed to save custom feed');
+        this.showNotice(error.message);
       }
     });
   }
@@ -851,12 +752,15 @@ class SettingsManager {
   // Delete custom feed
   async deleteCustomFeed(feedId) {
     const feed = this.feedSources.find(s => s.id === feedId);
-    if (!feed || !confirm(`Delete custom feed "${feed.name}"?`)) return;
+    if (!feed) return;
+    if (!await this.showConfirmDialog(`Delete custom feed "${feed.name}"?`, 'DELETE')) return;
 
     try {
       await TauriAPI.feedSources.deleteCustomFeed(feedId);
       window.AppNavigation.updateStatus(`Deleted custom feed: ${feed.name}`);
       await this.loadConfiguration();
+      // The backend drops the feed's cached articles; reload so they leave the news view
+      await window.articleManager?.loadArticles(true);
     } catch (error) {
       // console.error('Failed to delete custom feed:', error);
       window.AppNavigation.updateStatus('Failed to delete custom feed');
@@ -876,6 +780,7 @@ class SettingsManager {
     } catch (error) {
       // console.error('Failed to toggle custom feed:', error);
       window.AppNavigation.updateStatus('Failed to update custom feed');
+      this.renderSettings();
     }
   }
 }
@@ -885,6 +790,7 @@ let settingsManager;
 
 document.addEventListener('DOMContentLoaded', () => {
   settingsManager = new SettingsManager();
+  window.settingsManager = settingsManager;
 });
 
 // Export for global access

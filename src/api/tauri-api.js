@@ -64,10 +64,7 @@ export class FeedSourceAPI {
    */
   static async updateFeedSourceEnabled(sourceId, enabled) {
     try {
-      return await invoke('update_feed_source_enabled', { 
-        source_id: sourceId, 
-        enabled 
-      });
+      return await invoke('update_feed_source_enabled', { sourceId, enabled });
     } catch (error) {
       // console.error('Failed to update feed source:', error);
       throw new Error(`Failed to update feed source: ${error}`);
@@ -99,7 +96,7 @@ export class FeedSourceAPI {
    */
   static async getAvailableTopics(sourceId) {
     try {
-      return await invoke('get_available_topics', { source_id: sourceId });
+      return await invoke('get_available_topics', { sourceId });
     } catch (error) {
       // console.error('Failed to get available topics:', error);
       throw new Error(`Failed to get available topics: ${error}`);
@@ -337,14 +334,14 @@ export class UtilityAPI {
       
     } catch (error) {
       // console.error('Failed to open external URL:', error);
-      
-      // Fallback: try to copy to clipboard
+
+      // Fallback: copy to clipboard. alert()/prompt() are no-ops in the macOS webview,
+      // so report through the status bar instead.
       try {
         await navigator.clipboard.writeText(url);
-        alert('Could not open URL in browser. URL copied to clipboard!');
+        window.AppNavigation?.updateStatus('COULD NOT OPEN BROWSER - URL COPIED TO CLIPBOARD');
       } catch (clipboardError) {
-        // Final fallback: show URL for manual copying
-        prompt('Could not open URL or copy to clipboard. Please copy manually:', url);
+        window.AppNavigation?.updateStatus('COULD NOT OPEN URL');
       }
     }
   }

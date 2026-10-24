@@ -1,5 +1,5 @@
 use crate::feed_aggregator::FeedAggregator;
-use crate::models::CustomFeedConfig;
+use crate::models::AppConfig;
 use crate::services::AppState;
 use tauri::State;
 
@@ -13,6 +13,8 @@ pub async fn delete_config_file(state: State<'_, AppState>) -> Result<String, St
     if config_file.exists() {
         std::fs::remove_file(&config_file)
             .map_err(|e| format!("Failed to delete config file: {}", e))?;
+        // Keep the in-memory copy in sync, otherwise the next save writes the old config back
+        *state.config.write().unwrap() = AppConfig::default();
         Ok(format!("Config file deleted: {}", config_file.display()))
     } else {
         Ok("Config file does not exist".to_string())
@@ -66,28 +68,7 @@ pub async fn add_custom_feed(
     url: String,
     state: State<'_, AppState>,
 ) -> Result<String, String> {
-    let mut config = state.get_config();
-
-    // Generate ID from name
-    let id = format!("custom_{}", name.to_lowercase().replace(" ", "_"));
-
-    // Check if ID already exists
-    if config.custom_feeds.iter().any(|f| f.id == id) {
-        return Err("A feed with this name already exists".to_string());
-    }
-
-    let custom_feed = CustomFeedConfig {
-        id: id.clone(),
-        name,
-        url,
-        enabled: true,
-        last_fetched: None,
-    };
-
-    config.custom_feeds.push(custom_feed);
-    state.update_config(config)?;
-
-    Ok(id)
+    state.modify_config(|config| config.add_custom_feed(&name, &url))
 }
 
 #[tauri::command]
@@ -97,24 +78,36 @@ pub async fn update_custom_feed(
     url: String,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
-    let mut config = state.get_config();
-
-    if let Some(feed) = config.custom_feeds.iter_mut().find(|f| f.id == id) {
-        feed.name = name;
-        feed.url = url;
-        state.update_config(config)?;
-        Ok(())
-    } else {
-        Err(format!("Custom feed not found: {}", id))
-    }
+    state.modify_config(|config| config.update_custom_feed(&id, &name, &url))
 }
 
 #[tauri::command]
 pub async fn delete_custom_feed(id: String, state: State<'_, AppState>) -> Result<(), String> {
-    let mut config = state.get_config();
+    // Work out which cached articles belong to the feed while the config still describes it
+    let stale_source_id = state.modify_config(|config| {
+        let Some(removed) = config.remove_custom_feed(&id) else {
+            log::warn!("Custom feed '{}' not found, nothing to delete", id);
+            return Ok(None);
+        };
 
-    config.custom_feeds.retain(|f| f.id != id);
-    state.update_config(config)?;
+        let source_id = FeedAggregator::custom_feed_source_id(&removed.name);
+        let still_used = config.feed_sources.iter().any(|s| s.id == source_id)
+            || config
+                .custom_feeds
+                .iter()
+                .any(|f| FeedAggregator::custom_feed_source_id(&f.name) == source_id);
+
+        Ok((!still_used).then_some(source_id))
+    })?;
+
+    // Drop the feed's articles now rather than leaving them on screen until the next refresh
+    if let Some(source_id) = stale_source_id {
+        state
+            .article_cache
+            .write()
+            .unwrap()
+            .retain(|article| article.source_id != source_id);
+    }
 
     Ok(())
 }
@@ -125,15 +118,15 @@ pub async fn toggle_custom_feed(
     enabled: bool,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
-    let mut config = state.get_config();
-
-    if let Some(feed) = config.custom_feeds.iter_mut().find(|f| f.id == id) {
+    state.modify_config(|config| {
+        let feed = config
+            .custom_feeds
+            .iter_mut()
+            .find(|f| f.id == id)
+            .ok_or_else(|| format!("Custom feed not found: {}", id))?;
         feed.enabled = enabled;
-        state.update_config(config)?;
         Ok(())
-    } else {
-        Err(format!("Custom feed not found: {}", id))
-    }
+    })
 }
 
 #[tauri::command]

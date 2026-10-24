@@ -150,6 +150,83 @@ impl AppConfig {
         Ok(())
     }
 
+    /// Add a custom feed, returning its generated ID
+    pub fn add_custom_feed(&mut self, name: &str, url: &str) -> Result<String, String> {
+        let (name, url) = Self::validate_custom_feed_input(name, url)?;
+        self.ensure_custom_feed_name_unique(&name, None)?;
+
+        // Derive a stable, attribute-safe ID from the name and make it unique
+        let base_id = format!("custom_{}", slugify(&name));
+        let mut id = base_id.clone();
+        let mut suffix = 2;
+        while self.custom_feeds.iter().any(|f| f.id == id) {
+            id = format!("{}_{}", base_id, suffix);
+            suffix += 1;
+        }
+
+        self.custom_feeds.push(CustomFeedConfig {
+            id: id.clone(),
+            name,
+            url,
+            enabled: true,
+            last_fetched: None,
+        });
+
+        Ok(id)
+    }
+
+    /// Update the name and URL of an existing custom feed
+    pub fn update_custom_feed(&mut self, id: &str, name: &str, url: &str) -> Result<(), String> {
+        let (name, url) = Self::validate_custom_feed_input(name, url)?;
+        self.ensure_custom_feed_name_unique(&name, Some(id))?;
+
+        let feed = self
+            .custom_feeds
+            .iter_mut()
+            .find(|f| f.id == id)
+            .ok_or_else(|| format!("Custom feed not found: {}", id))?;
+        feed.name = name;
+        feed.url = url;
+        Ok(())
+    }
+
+    /// Remove a custom feed, returning it if it existed
+    pub fn remove_custom_feed(&mut self, id: &str) -> Option<CustomFeedConfig> {
+        let index = self.custom_feeds.iter().position(|f| f.id == id)?;
+        Some(self.custom_feeds.remove(index))
+    }
+
+    fn validate_custom_feed_input(name: &str, url: &str) -> Result<(String, String), String> {
+        let name = name.trim();
+        let url = url.trim();
+
+        if name.is_empty() {
+            return Err("Feed name cannot be empty".to_string());
+        }
+        if !url.starts_with("http://") && !url.starts_with("https://") {
+            return Err("Feed URL must start with http:// or https://".to_string());
+        }
+
+        Ok((name.to_string(), url.to_string()))
+    }
+
+    fn ensure_custom_feed_name_unique(
+        &self,
+        name: &str,
+        exclude_id: Option<&str>,
+    ) -> Result<(), String> {
+        let duplicate = self
+            .custom_feeds
+            .iter()
+            .any(|f| Some(f.id.as_str()) != exclude_id && f.name.eq_ignore_ascii_case(name));
+
+        if duplicate {
+            Err("A feed with this name already exists".to_string())
+        } else {
+            Ok(())
+        }
+    }
+
     /// Convert to a flat key-value map for database storage
     pub fn to_key_value_map(&self) -> HashMap<String, String> {
         let mut map = HashMap::new();
@@ -196,5 +273,96 @@ impl AppConfig {
 
         config.validate()?;
         Ok(config)
+    }
+}
+
+/// Lowercase a name and collapse anything that is not alphanumeric into single underscores
+fn slugify(name: &str) -> String {
+    let slug = name
+        .to_lowercase()
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join("_");
+
+    if slug.is_empty() {
+        "feed".to_string()
+    } else {
+        slug
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_add_custom_feed_generates_safe_unique_ids() {
+        let mut config = AppConfig::default();
+
+        let id = config
+            .add_custom_feed("  Bob's \"Daily\" News ", " https://example.com/rss ")
+            .unwrap();
+        assert_eq!(id, "custom_bob_s_daily_news");
+        assert_eq!(config.custom_feeds[0].name, "Bob's \"Daily\" News");
+        assert_eq!(config.custom_feeds[0].url, "https://example.com/rss");
+
+        // Different name that slugifies to the same ID still gets a unique ID
+        let id2 = config
+            .add_custom_feed("Bob s Daily News", "https://example.com/other")
+            .unwrap();
+        assert_eq!(id2, "custom_bob_s_daily_news_2");
+    }
+
+    #[test]
+    fn test_add_custom_feed_rejects_invalid_input() {
+        let mut config = AppConfig::default();
+
+        assert!(config
+            .add_custom_feed("   ", "https://example.com")
+            .is_err());
+        assert!(config.add_custom_feed("Feed", "example.com/rss").is_err());
+
+        config
+            .add_custom_feed("Feed", "https://example.com")
+            .unwrap();
+        let duplicate = config.add_custom_feed("FEED", "https://example.com/2");
+        assert!(duplicate.unwrap_err().contains("already exists"));
+    }
+
+    #[test]
+    fn test_update_custom_feed() {
+        let mut config = AppConfig::default();
+        let id = config
+            .add_custom_feed("One", "https://one.example")
+            .unwrap();
+        config
+            .add_custom_feed("Two", "https://two.example")
+            .unwrap();
+
+        // Keeping its own name is fine, taking another feed's name is not
+        config
+            .update_custom_feed(&id, "one", "https://one.example/rss")
+            .unwrap();
+        assert_eq!(config.custom_feeds[0].url, "https://one.example/rss");
+        assert!(config
+            .update_custom_feed(&id, "Two", "https://one.example")
+            .is_err());
+        assert!(config
+            .update_custom_feed("missing", "Three", "https://x.example")
+            .is_err());
+    }
+
+    #[test]
+    fn test_remove_custom_feed() {
+        let mut config = AppConfig::default();
+        let id = config
+            .add_custom_feed("One", "https://one.example")
+            .unwrap();
+
+        let removed = config.remove_custom_feed(&id).unwrap();
+        assert_eq!(removed.name, "One");
+        assert!(config.custom_feeds.is_empty());
+        assert!(config.remove_custom_feed(&id).is_none());
     }
 }

@@ -183,7 +183,7 @@ mod tests {
         let (config_manager, _temp_dir) = create_test_config_manager();
 
         let config = config_manager.load_config().unwrap();
-        assert_eq!(config.auto_refresh.enabled, true);
+        assert!(config.auto_refresh.enabled);
         assert_eq!(config.auto_refresh.interval_minutes, 30);
         assert!(config_manager.config_file.exists());
     }

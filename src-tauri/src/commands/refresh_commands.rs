@@ -147,9 +147,17 @@ pub async fn get_config(state: State<'_, AppState>) -> Result<AppConfig, String>
     Ok(state.get_config())
 }
 
+/// Save the settings the frontend edits directly (auto-refresh and UI).
+///
+/// Feeds and window state have their own commands; the frontend's copy of
+/// those can be stale, so they are never taken from here.
 #[tauri::command]
 pub async fn update_config(config: AppConfig, state: State<'_, AppState>) -> Result<(), String> {
-    state.update_config(config)
+    state.modify_config(|current| {
+        current.auto_refresh = config.auto_refresh;
+        current.ui = config.ui;
+        Ok(())
+    })
 }
 
 #[tauri::command]
