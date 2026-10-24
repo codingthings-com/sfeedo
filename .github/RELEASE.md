@@ -10,16 +10,20 @@ This project uses GitHub Actions to automatically build and release binaries for
 
 ## Creating a Release
 
-1. Update the version in `package.json` and `src-tauri/Cargo.toml`
-2. Update the version in all `tauri.conf.json.*` files
-3. Commit your changes
-4. Create and push a tag:
+1. Commit all your changes (the script refuses to run with uncommitted changes)
+2. Run the release script from the repository root:
    ```bash
-   git tag v0.1.0
-   git push origin v0.1.0
+   ./release.sh
    ```
-5. GitHub Actions will automatically build all platforms and create a draft release
-6. Review the draft release and publish when ready
+   It bumps the patch version (e.g. `0.1.13` → `0.1.14`) in `package.json`, `package-lock.json`,
+   `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock` and every `tauri.conf.json*` file, commits
+   `Release vX.Y.Z`, pushes the branch, then creates and pushes the `vX.Y.Z` tag.
+   It stops before changing anything if the branch is behind `origin` or the tag already exists.
+3. The pushed tag triggers GitHub Actions, which builds all platforms and creates a draft release
+4. Review the draft release and publish when ready
+
+To release manually instead, update the version in all of the files listed above, commit,
+then create and push the tag (`git tag vX.Y.Z && git push origin vX.Y.Z`).
 
 ## Manual Trigger
 
